@@ -11,7 +11,9 @@ import pandas as pd
 class PreparedDataset:
     X: pd.DataFrame
     y: pd.Series
+    dates: pd.Series
     removed_invalid_target: int
+    missing_rate_by_feature: dict[str, float]
 
 
 def load_dataset(csv_path: str | Path) -> pd.DataFrame:
@@ -31,12 +33,77 @@ def _ensure_snow_feature(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def enrich_temporal_features(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    if "date" in out.columns:
+        out["date"] = pd.to_datetime(out["date"], errors="coerce")
+        out["day_of_week"] = out["date"].dt.dayofweek
+        out["month"] = out["date"].dt.month
+        out["is_weekend"] = out["day_of_week"].isin([5, 6]).astype(int)
+        out["season"] = out["month"].map(
+            {
+                12: 0,
+                1: 0,
+                2: 0,
+                3: 1,
+                4: 1,
+                5: 1,
+                6: 2,
+                7: 2,
+                8: 2,
+                9: 3,
+                10: 3,
+                11: 3,
+            }
+        )
+    else:
+        out["day_of_week"] = 0
+        out["month"] = 1
+        out["is_weekend"] = 0
+        out["season"] = 0
+
+    if "time" in out.columns:
+        dt = pd.to_datetime(out["time"], format="%H:%M", errors="coerce")
+        out["hour"] = dt.dt.hour.fillna(12).astype(int)
+    else:
+        out["hour"] = 12
+    out["hour_peak"] = out["hour"].isin([7, 8, 9, 16, 17, 18]).astype(int)
+    return out
+
+
+def enrich_interaction_features(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    precipitation = pd.to_numeric(out.get("precipitation", 0), errors="coerce").fillna(0)
+    hour_peak = pd.to_numeric(out.get("hour_peak", 0), errors="coerce").fillna(0)
+    cloud_cover = pd.to_numeric(out.get("cloud_cover", 0), errors="coerce").fillna(0)
+    sunshine = pd.to_numeric(out.get("sunshine", 0), errors="coerce").fillna(0)
+    out["precipitation_peak_interaction"] = precipitation * hour_peak
+    out["low_visibility_proxy"] = np.where((cloud_cover >= 7) & (sunshine <= 1), 1, 0)
+    return out
+
+
+def add_spatial_key(df: pd.DataFrame) -> pd.DataFrame:
+    out = df.copy()
+    if "lsoa_of_accident_location" in out.columns:
+        out["spatial_key"] = out["lsoa_of_accident_location"].astype(str)
+    elif {"location_easting_osgr", "location_northing_osgr"}.issubset(out.columns):
+        e = pd.to_numeric(out["location_easting_osgr"], errors="coerce").fillna(-1).astype(int)
+        n = pd.to_numeric(out["location_northing_osgr"], errors="coerce").fillna(-1).astype(int)
+        out["spatial_key"] = (e // 1000).astype(str) + "_" + (n // 1000).astype(str)
+    else:
+        out["spatial_key"] = "unknown"
+    return out
+
+
 def prepare_dataset(
     df: pd.DataFrame,
     feature_columns: list[str],
     target_column: str = "accident_severity",
 ) -> PreparedDataset:
     work = _ensure_snow_feature(df)
+    work = enrich_temporal_features(work)
+    work = enrich_interaction_features(work)
+    work = add_spatial_key(work)
 
     missing_features = [c for c in feature_columns if c not in work.columns]
     if missing_features:
@@ -49,7 +116,9 @@ def prepare_dataset(
     valid = valid[valid[target_column].isin([1, 2, 3])]
     removed_invalid_target = int(len(work) - len(valid))
 
+    dates = pd.to_datetime(valid.get("date", pd.NaT), errors="coerce")
     X = valid[feature_columns].apply(pd.to_numeric, errors="coerce")
+    missing_rate_by_feature = X.isna().mean().fillna(0).to_dict()
     X = X.replace([np.inf, -np.inf], np.nan)
     medians = X.median(numeric_only=True)
     X = X.fillna(medians)
@@ -57,5 +126,10 @@ def prepare_dataset(
     y = valid[target_column].astype(int) - 1
     y.name = "severity_class"
 
-    return PreparedDataset(X=X, y=y, removed_invalid_target=removed_invalid_target)
-
+    return PreparedDataset(
+        X=X,
+        y=y,
+        dates=dates,
+        removed_invalid_target=removed_invalid_target,
+        missing_rate_by_feature=missing_rate_by_feature,
+    )

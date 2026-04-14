@@ -12,6 +12,11 @@ train:
   feature_columns:
     - number_of_vehicles
     - number_of_casualties
+    - hour
+    - day_of_week
+    - month
+    - is_weekend
+    - season
     - cloud_cover
     - sunshine
     - global_radiation
@@ -21,6 +26,9 @@ train:
     - precipitation
     - pressure
     - snow
+    - hour_peak
+    - precipitation_peak_interaction
+    - low_visibility_proxy
 
 app:
   project_name: London Road Collision Severity Project
@@ -28,4 +36,3 @@ app:
     - Slight
     - Serious
     - Fatal
-
