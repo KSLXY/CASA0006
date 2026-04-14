@@ -77,13 +77,22 @@ def _safe_image(path: Path, caption: str):
 
 
 def main() -> None:
+    def t(en: str, zh: str) -> str:
+        return zh if lang == "中文" else en
+
     st.set_page_config(
         page_title="London Road Severity Explorer",
         page_icon=":bar_chart:",
         layout="wide",
     )
-    st.title("London Road Collision Severity Project")
-    st.caption("From coursework to portfolio: data quality, model comparison, and deployment.")
+    lang = st.sidebar.selectbox("Language / 语言", ["English", "中文"], index=0)
+    st.title(t("London Road Collision Severity Project", "伦敦交通事故严重度预测项目"))
+    st.caption(
+        t(
+            "From coursework to portfolio: data quality, model comparison, and deployment.",
+            "从课程作业到作品集：数据治理、模型对比与在线部署。",
+        )
+    )
 
     payload, model_load_error = load_model_payload()
     metrics = load_metrics()
@@ -95,9 +104,11 @@ def main() -> None:
 
     if model_load_error:
         st.error(
-            "Model artifact could not be loaded. "
-            "This is often a Python-version mismatch issue on cloud. "
-            f"Details: {model_load_error}"
+            t(
+                "Model artifact could not be loaded. This is often a Python-version mismatch issue on cloud. ",
+                "模型文件加载失败，这通常与云端 Python 版本不一致有关。"
+            )
+            + f"\n\nDetails: {model_load_error}"
         )
 
     selected_model = metrics.get("selected_model", "N/A") if metrics else "N/A"
@@ -105,58 +116,78 @@ def main() -> None:
     rows_used = int(metrics.get("rows_used_for_training", 0)) if metrics else 0
     rows_removed = int(metrics.get("rows_removed_invalid_target", 0)) if metrics else 0
     k1, k2, k3, k4 = st.columns(4)
-    k1.metric("Rows total", rows_total)
-    k2.metric("Rows used", rows_used)
-    k3.metric("Invalid target removed", rows_removed)
-    k4.metric("Best model", selected_model)
+    k1.metric(t("Rows total", "总样本数"), rows_total)
+    k2.metric(t("Rows used", "训练使用样本"), rows_used)
+    k3.metric(t("Invalid target removed", "剔除异常标签"), rows_removed)
+    k4.metric(t("Best model", "最佳模型"), selected_model)
 
     tabs = st.tabs(
         [
             "Overview",
-            "Data",
-            "Data Quality",
-            "Model Performance",
-            "Reliability",
-            "Error Analysis",
-            "Predict",
-            "Limitations & Next Step",
+            t("Data", "数据"),
+            t("Data Quality", "数据质量"),
+            t("Model Performance", "模型表现"),
+            t("Reliability", "可靠性"),
+            t("Error Analysis", "误差分析"),
+            t("Predict", "预测"),
+            t("Limitations & Next Step", "局限与下一步"),
         ]
     )
 
     with tabs[0]:
-        st.subheader("Problem Story")
+        st.subheader(t("Problem Story", "项目主线"))
         st.markdown(
-            """
-            - **City context**: Road-collision severity is a key public-safety signal.
-            - **Data challenge**: Real-world labels include invalid values (e.g. `-10`), so cleaning decisions matter.
-            - **Modeling decision**: We compare baseline and tree models, and select by **Macro F1** to keep minority classes visible.
-            - **Deployment outcome**: This demo is online and reproducible from GitHub + Streamlit.
-            """
+            t(
+                """
+                - **City context**: Road-collision severity is a key public-safety signal.
+                - **Data challenge**: Real-world labels include invalid values (e.g. `-10`), so cleaning decisions matter.
+                - **Modeling decision**: We compare baseline and tree models, and select by **Macro F1** to keep minority classes visible.
+                - **Deployment outcome**: This demo is online and reproducible from GitHub + Streamlit.
+                """,
+                """
+                - **城市问题**：交通事故严重度是公共安全的核心信号。
+                - **数据挑战**：真实标签存在异常值（如 `-10`），必须先治理再建模。
+                - **建模决策**：采用多模型对比，并以 **Macro F1** 作为主指标，避免忽视少数类。
+                - **交付结果**：项目可在 GitHub + Streamlit 在线复现与展示。
+                """,
+            )
         )
         if metrics:
-            st.info(f"Performance note: **{metrics.get('performance_note', 'sample demo performance')}**")
+            st.info(
+                t(
+                    f"Performance note: **{metrics.get('performance_note', 'sample demo performance')}**",
+                    f"结果说明：**{metrics.get('performance_note', 'sample demo performance')}**",
+                )
+            )
 
     with tabs[1]:
-        st.subheader("Sample Dataset Preview")
+        st.subheader(t("Sample Dataset Preview", "样本数据预览"))
         if sample_df.empty:
-            st.warning("Sample data not found.")
+            st.warning(t("Sample data not found.", "未找到样本数据。"))
         else:
             st.dataframe(sample_df.head(20), use_container_width=True)
-            st.write(f"Rows: {len(sample_df)}")
+            st.write(t(f"Rows: {len(sample_df)}", f"样本行数：{len(sample_df)}"))
         st.markdown(
-            """
-            **Data sources**
-            - London weather data (Kaggle public dataset)
-            - UK DfT road collision records
-            """
+            t(
+                """
+                **Data sources**
+                - London weather data (Kaggle public dataset)
+                - UK DfT road collision records
+                """,
+                """
+                **数据来源**
+                - 伦敦天气（Kaggle 公开数据）
+                - 英国 DfT 道路碰撞数据
+                """,
+            )
         )
 
     with tabs[2]:
-        st.subheader("Data Quality")
+        st.subheader(t("Data Quality", "数据质量"))
         if metrics is None:
-            st.info("No metrics file found. Run training first.")
+            st.info(t("No metrics file found. Run training first.", "未找到指标文件，请先运行训练。"))
         else:
-            st.metric("Removed invalid target labels", int(metrics.get("rows_removed_invalid_target", 0)))
+            st.metric(t("Removed invalid target labels", "剔除异常目标标签"), int(metrics.get("rows_removed_invalid_target", 0)))
             missing_rate = metrics.get("missing_rate_by_feature", {})
             if missing_rate:
                 df_missing = (
@@ -167,21 +198,26 @@ def main() -> None:
                     .reset_index(drop=True)
                 )
                 st.dataframe(df_missing, use_container_width=True)
-                st.caption("Missing-rate is computed before imputation and used as data quality evidence.")
+                st.caption(
+                    t(
+                        "Missing-rate is computed before imputation and used as data quality evidence.",
+                        "缺失率在填补前统计，用于展示数据质量证据。",
+                    )
+                )
             else:
-                st.write("Missing-rate details unavailable.")
+                st.write(t("Missing-rate details unavailable.", "缺失率明细不可用。"))
 
     with tabs[3]:
-        st.subheader("Model Comparison & Evidence")
+        st.subheader(t("Model Comparison & Evidence", "模型对比与证据"))
         if metrics is None:
-            st.info("No metrics file found. Run training first.")
+            st.info(t("No metrics file found. Run training first.", "未找到指标文件，请先运行训练。"))
         else:
             selected = metrics.get("selected_model", "N/A")
-            st.write(f"Selected model: **{selected}**")
+            st.write(t(f"Selected model: **{selected}**", f"选中模型：**{selected}**"))
             selected_metrics = metrics.get("selected_model_metrics", {})
             c1, c2 = st.columns(2)
-            c1.metric("Accuracy", f"{selected_metrics.get('accuracy', 0):.3f}")
-            c2.metric("Macro F1", f"{selected_metrics.get('f1_macro', 0):.3f}")
+            c1.metric(t("Accuracy", "准确率"), f"{selected_metrics.get('accuracy', 0):.3f}")
+            c2.metric(t("Macro F1", "宏平均F1"), f"{selected_metrics.get('f1_macro', 0):.3f}")
             if model_compare_df.empty:
                 all_metrics = metrics.get("all_model_metrics", [])
                 if all_metrics:
@@ -194,38 +230,40 @@ def main() -> None:
                     model_compare_df.set_index("model_name")[["accuracy", "f1_macro"]],
                     use_container_width=True,
                 )
-            _safe_image(FIGURES_DIR / "model_comparison.png", "Model Comparison Figure")
-            _safe_image(FIGURES_DIR / "confusion_matrix.png", "Confusion Matrix (Selected Model)")
-            _safe_image(FIGURES_DIR / "feature_importance.png", "Feature Influence")
+            _safe_image(FIGURES_DIR / "model_comparison.png", t("Model Comparison Figure", "模型对比图"))
+            _safe_image(FIGURES_DIR / "confusion_matrix.png", t("Confusion Matrix (Selected Model)", "混淆矩阵（选中模型）"))
+            _safe_image(FIGURES_DIR / "feature_importance.png", t("Feature Influence", "特征影响图"))
             if not feature_importance_df.empty:
-                st.markdown("Top feature influence table")
+                st.markdown(t("Top feature influence table", "特征影响Top表"))
                 st.dataframe(feature_importance_df.head(10), use_container_width=True)
 
     with tabs[4]:
-        st.subheader("Reliability Checks")
+        st.subheader(t("Reliability Checks", "可靠性检验"))
         if metrics_cv is None:
-            st.info("No reliability artifact found. Run training first.")
+            st.info(t("No reliability artifact found. Run training first.", "未找到可靠性结果，请先运行训练。"))
         else:
             cv_rows = metrics_cv.get("cv", {}).get("rows", [])
             if cv_rows:
                 cv_df = pd.DataFrame(cv_rows)
-                st.markdown("Stratified K-Fold results")
+                st.markdown(t("Stratified K-Fold results", "分层K折结果"))
                 st.dataframe(cv_df, use_container_width=True)
             time_holdout = metrics_cv.get("time_holdout", {})
-            st.markdown("Time-based holdout (simulation of real deployment)")
+            st.markdown(t("Time-based holdout (simulation of real deployment)", "时间外推切分（模拟真实部署）"))
             if time_holdout.get("available"):
                 st.json(time_holdout)
             else:
-                st.warning(time_holdout.get("reason", "Time holdout unavailable."))
+                st.warning(time_holdout.get("reason", t("Time holdout unavailable.", "时间外推不可用。")))
             if metrics:
-                st.metric("Fatal recall (test split)", f"{metrics.get('fatal_recall_on_test_split', 0):.3f}")
+                st.metric(t("Fatal recall (test split)", "Fatal召回率（测试集）"), f"{metrics.get('fatal_recall_on_test_split', 0):.3f}")
 
     with tabs[5]:
-        st.subheader("Error Analysis")
+        st.subheader(t("Error Analysis", "误差分析"))
         if error_cases_df.empty:
             st.warning(
-                "No error rows in current sample split. "
-                "Treat this as optimistic sample behavior, not final model quality."
+                t(
+                    "No error rows in current sample split. Treat this as optimistic sample behavior, not final model quality.",
+                    "当前样本切分下没有误差样本。这通常表示样本规模较小，不能据此断言模型泛化能力。",
+                )
             )
         else:
             display_cols = [
@@ -245,14 +283,14 @@ def main() -> None:
         if metrics:
             observations = metrics.get("error_analysis_observations", [])
             if observations:
-                st.markdown("Key observations")
+                st.markdown(t("Key observations", "关键观察"))
                 for item in observations:
                     st.write(f"- {item}")
 
     with tabs[6]:
-        st.subheader("Single Prediction")
+        st.subheader(t("Single Prediction", "单条预测"))
         if payload is None:
-            st.info("No trained model found. Run `python -m src.train --config configs/default.yaml` first.")
+            st.info(t("No trained model found. Run `python -m src.train --config configs/default.yaml` first.", "未找到训练模型，请先运行训练命令。"))
         else:
             feature_columns = payload["feature_columns"]
             defaults = payload.get("feature_defaults", {})
@@ -262,33 +300,52 @@ def main() -> None:
                 default = float(defaults.get(col, 0.0))
                 inputs[col] = st.number_input(col, value=default, format="%.4f")
 
-            if st.button("Predict severity"):
+            if st.button(t("Predict severity", "预测严重度")):
                 X = pd.DataFrame([inputs], columns=feature_columns)
                 pipeline = payload["pipeline"]
                 pred_idx = int(pipeline.predict(X)[0])
                 probs = pipeline.predict_proba(X)[0]
-                st.success(f"Predicted class: {class_labels[pred_idx]} (severity={pred_idx + 1})")
+                st.success(
+                    t(
+                        f"Predicted class: {class_labels[pred_idx]} (severity={pred_idx + 1})",
+                        f"预测类别：{class_labels[pred_idx]}（严重度={pred_idx + 1}）",
+                    )
+                )
                 prob_table = pd.DataFrame(
                     {"class_label": class_labels, "probability": probs}
                 ).sort_values("probability", ascending=False)
                 st.dataframe(prob_table, use_container_width=True)
 
     with tabs[7]:
-        st.subheader("Limitations")
+        st.subheader(t("Limitations", "局限"))
         st.markdown(
-            """
-            - The current metrics are based on a **small sample demo dataset**.
-            - Temporal and spatial features are still limited.
-            - External enrichment data (OSM/air-quality/IMD) is not fully connected yet.
-            """
+            t(
+                """
+                - The current metrics are based on a **small sample demo dataset**.
+                - Temporal and spatial features are still limited.
+                - External enrichment data (OSM/air-quality/IMD) is not fully connected yet.
+                """,
+                """
+                - 当前指标来自**小样本演示数据**，可能偏乐观。
+                - 时空特征仍然有限。
+                - 外部补充数据（OSM/空气质量/IMD）尚未完全打通。
+                """,
+            )
         )
-        st.subheader("Next Step")
+        st.subheader(t("Next Step", "下一步"))
         st.markdown(
-            """
-            - Add time-window features and road/location context.
-            - Use cross-validation and class-balance strategies.
-            - Expand error analysis with full-data runs and stability checks.
-            """
+            t(
+                """
+                - Add time-window features and road/location context.
+                - Use cross-validation and class-balance strategies.
+                - Expand error analysis with full-data runs and stability checks.
+                """,
+                """
+                - 增加时间窗口和道路/空间上下文特征。
+                - 强化交叉验证与类别不平衡策略。
+                - 在全量数据上扩展误差分析与稳定性检验。
+                """,
+            )
         )
 
 
