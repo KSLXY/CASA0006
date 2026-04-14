@@ -1,0 +1,1 @@
+number_of_vehicles,number_of_casualties,hour,day_of_week,month,is_weekend,season,cloud_cover,sunshine,global_radiation,max_temp,mean_temp,min_temp,precipitation,pressure,snow,hour_peak,precipitation_peak_interaction,low_visibility_proxy,actual_class_index,predicted_class_index,actual_class_label,predicted_class_label

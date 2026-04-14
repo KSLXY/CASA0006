@@ -1,0 +1,20 @@
+project:
+  city: London
+  from_date: "2015-01-01"
+  to_date: "2024-12-31"
+
+paths:
+  raw_dir: data/raw
+  interim_dir: data/interim
+  processed_dir: data/processed
+  collision_file: data/raw/dft_collision.csv
+  weather_file: data/raw/london_weather.csv
+  bank_holidays_file: data/raw/uk_bank_holidays.json
+  processed_master: data/processed/processed_master.parquet
+  metadata_file: data/processed/metadata.json
+
+sources:
+  dft_collision_url: "https://data.dft.gov.uk/road-accidents-safety-data/dft-road-casualty-statistics-collision-1979-latest-published-year.csv"
+  kaggle_weather_dataset: "emmanuelfwerr/london-weather-data"
+  gov_bank_holidays_url: "https://www.gov.uk/bank-holidays.json"
+

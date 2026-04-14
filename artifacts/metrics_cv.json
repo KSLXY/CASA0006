@@ -1,0 +1,53 @@
+{
+  "cv": {
+    "class_labels": [
+      "Slight",
+      "Serious",
+      "Fatal"
+    ],
+    "rows": [
+      {
+        "model_name": "logistic_regression",
+        "cv_splits": 5,
+        "accuracy_mean": 0.9142857142857143,
+        "accuracy_std": 0.06998542122237654,
+        "f1_macro_mean": 0.8653968253968255,
+        "f1_macro_std": 0.14085510729002715,
+        "fatal_recall_mean": 0.8,
+        "fatal_recall_std": 0.4
+      },
+      {
+        "model_name": "random_forest",
+        "cv_splits": 5,
+        "accuracy_mean": 0.9428571428571428,
+        "accuracy_std": 0.06998542122237654,
+        "f1_macro_mean": 0.8476190476190476,
+        "f1_macro_std": 0.18662778992633738,
+        "fatal_recall_mean": 0.6,
+        "fatal_recall_std": 0.48989794855663565
+      },
+      {
+        "model_name": "hist_gradient_boosting",
+        "cv_splits": 5,
+        "accuracy_mean": 0.4,
+        "accuracy_std": 0.05714285714285714,
+        "f1_macro_mean": 0.18962962962962962,
+        "f1_macro_std": 0.020740740740740737,
+        "fatal_recall_mean": 0.0,
+        "fatal_recall_std": 0.0
+      }
+    ],
+    "selected_model_by_cv": "logistic_regression"
+  },
+  "time_holdout": {
+    "available": true,
+    "split_date_start": "2020-02-09",
+    "train_rows": 28,
+    "test_rows": 7,
+    "metrics": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "fatal_recall": 1.0
+    }
+  }
+}

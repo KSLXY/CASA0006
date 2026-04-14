@@ -225,9 +225,35 @@
   "rows_total": 36,
   "rows_used_for_training": 35,
   "rows_removed_invalid_target": 1,
+  "missing_rate_by_feature": {
+    "number_of_vehicles": 0.0,
+    "number_of_casualties": 0.0,
+    "hour": 0.0,
+    "day_of_week": 0.0,
+    "month": 0.0,
+    "is_weekend": 0.0,
+    "season": 0.0,
+    "cloud_cover": 0.0,
+    "sunshine": 0.0,
+    "global_radiation": 0.0,
+    "max_temp": 0.0,
+    "mean_temp": 0.0,
+    "min_temp": 0.0,
+    "precipitation": 0.0,
+    "pressure": 0.0,
+    "snow": 0.0,
+    "hour_peak": 0.0,
+    "precipitation_peak_interaction": 0.0,
+    "low_visibility_proxy": 0.0
+  },
   "feature_columns": [
     "number_of_vehicles",
     "number_of_casualties",
+    "hour",
+    "day_of_week",
+    "month",
+    "is_weekend",
+    "season",
     "cloud_cover",
     "sunshine",
     "global_radiation",
@@ -236,6 +262,25 @@
     "min_temp",
     "precipitation",
     "pressure",
-    "snow"
-  ]
+    "snow",
+    "hour_peak",
+    "precipitation_peak_interaction",
+    "low_visibility_proxy"
+  ],
+  "performance_note": "sample demo performance",
+  "model_compare_csv": "/Users/linxinyi/casa_revise/casa0006/artifacts/model_compare.csv",
+  "metrics_cv_json": "/Users/linxinyi/casa_revise/casa0006/artifacts/metrics_cv.json",
+  "error_cases_csv": "/Users/linxinyi/casa_revise/casa0006/artifacts/error_cases.csv",
+  "report_figures": {
+    "model_comparison": "/Users/linxinyi/casa_revise/casa0006/reports/figures/model_comparison.png",
+    "confusion_matrix": "/Users/linxinyi/casa_revise/casa0006/reports/figures/confusion_matrix.png",
+    "feature_importance": "/Users/linxinyi/casa_revise/casa0006/reports/figures/feature_importance.png"
+  },
+  "error_analysis_observations": [
+    "No error cases on the current sample split; this likely reflects small sample size rather than perfect generalization.",
+    "Class distribution in the sample is limited, so metrics can look optimistic.",
+    "Cross-validation and larger data are required before any policy-level interpretation."
+  ],
+  "error_case_count": 0,
+  "fatal_recall_on_test_split": 1.0
 }
