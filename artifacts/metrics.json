@@ -1,0 +1,241 @@
+{
+  "selected_model": "logistic_regression",
+  "selected_model_metrics": {
+    "accuracy": 1.0,
+    "f1_macro": 1.0,
+    "classification_report": {
+      "0": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 3.0
+      },
+      "1": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 3.0
+      },
+      "2": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 1.0
+      },
+      "accuracy": 1.0,
+      "macro avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 7.0
+      },
+      "weighted avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 7.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        3,
+        0,
+        0
+      ],
+      [
+        0,
+        3,
+        0
+      ],
+      [
+        0,
+        0,
+        1
+      ]
+    ],
+    "model_name": "logistic_regression"
+  },
+  "all_model_metrics": [
+    {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "classification_report": {
+        "0": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 3.0
+        },
+        "1": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 3.0
+        },
+        "2": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 1.0
+        },
+        "accuracy": 1.0,
+        "macro avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 7.0
+        },
+        "weighted avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 7.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          0,
+          3,
+          0
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      "model_name": "logistic_regression"
+    },
+    {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "classification_report": {
+        "0": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 3.0
+        },
+        "1": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 3.0
+        },
+        "2": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 1.0
+        },
+        "accuracy": 1.0,
+        "macro avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 7.0
+        },
+        "weighted avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 7.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          3,
+          0,
+          0
+        ],
+        [
+          0,
+          3,
+          0
+        ],
+        [
+          0,
+          0,
+          1
+        ]
+      ],
+      "model_name": "random_forest"
+    },
+    {
+      "accuracy": 0.42857142857142855,
+      "f1_macro": 0.19999999999999998,
+      "classification_report": {
+        "0": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 3.0
+        },
+        "1": {
+          "precision": 0.42857142857142855,
+          "recall": 1.0,
+          "f1-score": 0.6,
+          "support": 3.0
+        },
+        "2": {
+          "precision": 0.0,
+          "recall": 0.0,
+          "f1-score": 0.0,
+          "support": 1.0
+        },
+        "accuracy": 0.42857142857142855,
+        "macro avg": {
+          "precision": 0.14285714285714285,
+          "recall": 0.3333333333333333,
+          "f1-score": 0.19999999999999998,
+          "support": 7.0
+        },
+        "weighted avg": {
+          "precision": 0.18367346938775508,
+          "recall": 0.42857142857142855,
+          "f1-score": 0.2571428571428571,
+          "support": 7.0
+        }
+      },
+      "confusion_matrix": [
+        [
+          0,
+          3,
+          0
+        ],
+        [
+          0,
+          3,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "model_name": "hist_gradient_boosting"
+    }
+  ],
+  "rows_total": 36,
+  "rows_used_for_training": 35,
+  "rows_removed_invalid_target": 1,
+  "feature_columns": [
+    "number_of_vehicles",
+    "number_of_casualties",
+    "cloud_cover",
+    "sunshine",
+    "global_radiation",
+    "max_temp",
+    "mean_temp",
+    "min_temp",
+    "precipitation",
+    "pressure",
+    "snow"
+  ]
+}
