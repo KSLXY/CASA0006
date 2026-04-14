@@ -1,0 +1,31 @@
+paths:
+  sample_data: data/sample/merged_sample.csv
+  model_artifact: artifacts/model.joblib
+  metrics_artifact: artifacts/metrics.json
+  evaluation_artifact: artifacts/evaluation.json
+
+train:
+  random_seed: 42
+  test_size: 0.2
+  target_column: accident_severity
+  model_selection_metric: f1_macro
+  feature_columns:
+    - number_of_vehicles
+    - number_of_casualties
+    - cloud_cover
+    - sunshine
+    - global_radiation
+    - max_temp
+    - mean_temp
+    - min_temp
+    - precipitation
+    - pressure
+    - snow
+
+app:
+  project_name: London Road Collision Severity Project
+  class_labels:
+    - Slight
+    - Serious
+    - Fatal
+
