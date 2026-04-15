@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from datetime import datetime
+from io import StringIO
 from pathlib import Path
 
 import pandas as pd
@@ -15,6 +16,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--config", type=str, default="configs/data.yaml")
     parser.add_argument("--from", dest="from_date", type=str, default=None)
     parser.add_argument("--to", dest="to_date", type=str, default=None)
+    parser.add_argument(
+        "--allow-insecure-ssl",
+        action="store_true",
+        help="Disable SSL certificate verification when downloading HTTPS sources.",
+    )
     return parser.parse_args()
 
 
@@ -33,11 +39,17 @@ def _ensure_dirs(cfg: dict) -> tuple[Path, Path, Path]:
     return raw_dir, interim_dir, processed_dir
 
 
-def fetch_dft_collision(cfg: dict, from_date: str, to_date: str) -> Path:
+def _read_csv_from_url(url: str, verify_ssl: bool) -> pd.DataFrame:
+    response = requests.get(url, timeout=120, verify=verify_ssl)
+    response.raise_for_status()
+    return pd.read_csv(StringIO(response.text), low_memory=False)
+
+
+def fetch_dft_collision(cfg: dict, from_date: str, to_date: str, verify_ssl: bool) -> Path:
     output = Path(cfg["paths"]["collision_file"]).resolve()
     url = cfg["sources"]["dft_collision_url"]
     print(f"Downloading DfT collision data from: {url}")
-    df = pd.read_csv(url, low_memory=False)
+    df = _read_csv_from_url(url, verify_ssl=verify_ssl)
     df["date"] = pd.to_datetime(df["date"], errors="coerce")
     mask = (df["date"] >= pd.Timestamp(from_date)) & (df["date"] <= pd.Timestamp(to_date))
     df = df.loc[mask].copy()
@@ -46,21 +58,21 @@ def fetch_dft_collision(cfg: dict, from_date: str, to_date: str) -> Path:
     return output
 
 
-def fetch_dft_vehicle(cfg: dict) -> Path:
+def fetch_dft_vehicle(cfg: dict, verify_ssl: bool) -> Path:
     output = Path(cfg["paths"]["vehicle_file"]).resolve()
     url = cfg["sources"]["dft_vehicle_url"]
     print(f"Downloading DfT vehicle data from: {url}")
-    df = pd.read_csv(url, low_memory=False)
+    df = _read_csv_from_url(url, verify_ssl=verify_ssl)
     df.to_csv(output, index=False)
     print(f"Saved DfT vehicle: {output} (rows={len(df)})")
     return output
 
 
-def fetch_dft_casualty(cfg: dict) -> Path:
+def fetch_dft_casualty(cfg: dict, verify_ssl: bool) -> Path:
     output = Path(cfg["paths"]["casualty_file"]).resolve()
     url = cfg["sources"]["dft_casualty_url"]
     print(f"Downloading DfT casualty data from: {url}")
-    df = pd.read_csv(url, low_memory=False)
+    df = _read_csv_from_url(url, verify_ssl=verify_ssl)
     df.to_csv(output, index=False)
     print(f"Saved DfT casualty: {output} (rows={len(df)})")
     return output
@@ -85,11 +97,11 @@ def fetch_weather(cfg: dict, from_date: str, to_date: str) -> Path:
     return output
 
 
-def fetch_bank_holidays(cfg: dict) -> Path:
+def fetch_bank_holidays(cfg: dict, verify_ssl: bool) -> Path:
     output = Path(cfg["paths"]["bank_holidays_file"]).resolve()
     url = cfg["sources"]["gov_bank_holidays_url"]
     print(f"Downloading bank holidays from: {url}")
-    response = requests.get(url, timeout=30)
+    response = requests.get(url, timeout=30, verify=verify_ssl)
     response.raise_for_status()
     data = response.json()
     output.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -117,13 +129,14 @@ def main() -> None:
     _ensure_dirs(cfg)
     from_date = args.from_date or cfg["project"]["from_date"]
     to_date = args.to_date or cfg["project"]["to_date"]
+    verify_ssl = not args.allow_insecure_ssl
 
     outputs: dict[str, str] = {}
-    outputs["collision_file"] = str(fetch_dft_collision(cfg, from_date, to_date))
-    outputs["vehicle_file"] = str(fetch_dft_vehicle(cfg))
-    outputs["casualty_file"] = str(fetch_dft_casualty(cfg))
+    outputs["collision_file"] = str(fetch_dft_collision(cfg, from_date, to_date, verify_ssl=verify_ssl))
+    outputs["vehicle_file"] = str(fetch_dft_vehicle(cfg, verify_ssl=verify_ssl))
+    outputs["casualty_file"] = str(fetch_dft_casualty(cfg, verify_ssl=verify_ssl))
     outputs["weather_file"] = str(fetch_weather(cfg, from_date, to_date))
-    outputs["bank_holidays_file"] = str(fetch_bank_holidays(cfg))
+    outputs["bank_holidays_file"] = str(fetch_bank_holidays(cfg, verify_ssl=verify_ssl))
     write_fetch_metadata(cfg, from_date, to_date, outputs)
 
 
