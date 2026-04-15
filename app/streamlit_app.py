@@ -74,124 +74,196 @@ def load_feature_importance():
 def _safe_image(path: Path, caption: str):
     if path.exists():
         st.image(str(path), caption=caption, use_container_width=True)
+        return True
+    return False
 
 
 def _render_module_explainer(section_key: str, t):
     explainers = {
         "overview": t(
             """
-            **How to read this module**
-            1. We define the safety problem first (severity classification, not simple accident counting).
-            2. We show why data governance is necessary before modeling.
-            3. We frame model output as risk-support evidence rather than automatic decision.
+            **Research framing**
+            - **Research question**: Can routinely collected transport and weather signals support a tri-level severity classification (`Slight/Serious/Fatal`)?
+            - **Analytical unit**: Each row is treated as one observed collision context, with severity as the supervised target.
+            - **Causal caution**: This project is predictive, not causal inference; coefficients and feature importances are interpreted as association evidence.
+            - **Decision boundary**: Outputs are for risk triage and communication support, not autonomous policy enforcement.
             """,
             """
-            **本模块怎么看**
-            1. 先定义问题：这是“严重度分类”，不是简单事故数量统计。
-            2. 先做数据治理再建模，避免脏标签直接污染结果。
-            3. 输出定位为风险辅助证据，不是自动执法决策。
+            **研究框架**
+            - **研究问题**：常规交通与天气信号能否支持事故严重度三级分类（`Slight/Serious/Fatal`）？
+            - **分析单元**：每一行代表一次事故上下文观测，严重度为监督学习目标变量。
+            - **解释边界**：本项目是预测研究而非因果识别，系数/重要性仅解释“相关性证据”。
+            - **应用定位**：输出用于风险分层与沟通支持，不作为自动执法或单点决策依据。
             """,
         ),
         "data": t(
             """
-            **How to read this module**
-            1. Inspect raw fields and identify available explanatory signals.
-            2. Check whether key fields (date/time/severity) are present and usable.
-            3. Treat this table as the input boundary for feature engineering.
+            **Data module interpretation protocol**
+            - **Step 1: Structural audit**: verify schema completeness, data types, and key identifiers (`date/time/severity`).
+            - **Step 2: Measurement validity**: inspect whether variables are physically meaningful for traffic risk (e.g., precipitation, visibility proxies, vehicle count).
+            - **Step 3: Modeling readiness**: define the feasible feature space and record variables excluded due to missingness or leakage risk.
+            - **Output meaning**: This table is the empirical boundary of what the model is allowed to learn.
             """,
             """
-            **本模块怎么看**
-            1. 先确认原始字段是否能解释事故严重度。
-            2. 检查 date/time/severity 等关键字段是否完整可用。
-            3. 把本页视为后续特征工程的输入边界。
+            **数据模块解读协议**
+            - **步骤1：结构审计**：确认字段结构、数据类型和关键标识（`date/time/severity`）是否完备。
+            - **步骤2：测量有效性**：判断变量是否对交通风险具有物理或行为意义（如降水、能见度代理、车辆数）。
+            - **步骤3：建模可用性**：明确可进入模型的特征边界，并记录因缺失或泄漏风险被排除的变量。
+            - **产出含义**：本页定义了模型可学习信息的经验边界。
             """,
         ),
         "quality": t(
             """
-            **How to read this module**
-            1. Invalid target removal quantifies label risk control.
-            2. Missing-rate table shows where imputation may introduce uncertainty.
-            3. High-quality modeling starts from explicit data quality evidence.
+            **Data quality interpretation protocol**
+            - **Label governance**: abnormal target codes (e.g., `-10`) are treated as non-inferential noise and removed before training.
+            - **Missingness diagnostics**: feature-wise missing rate quantifies potential information loss and imputation uncertainty.
+            - **Reproducibility evidence**: each cleaning decision is represented by explicit counts (rows removed, rows retained).
+            - **Scientific implication**: model quality cannot exceed data quality; this module establishes evidence credibility.
             """,
             """
-            **本模块怎么看**
-            1. 异常标签剔除数量用于量化标签治理效果。
-            2. 缺失率表反映插补可能带来的不确定性来源。
-            3. 模型可信度首先来自数据质量证据。
+            **数据质量解读协议**
+            - **标签治理**：将异常目标编码（如 `-10`）视为不可推断噪声，训练前剔除。
+            - **缺失诊断**：按特征给出缺失率，量化信息损失与插补不确定性来源。
+            - **可复现证据**：每项清洗决策都以可追溯计数呈现（剔除数、保留数）。
+            - **研究含义**：模型上限受数据质量约束，本模块是证据可信性的基础。
             """,
         ),
         "performance": t(
             """
-            **How to read this module**
-            1. Accuracy gives overall correctness; Macro F1 protects minority classes.
-            2. Compare all candidate models before selecting one.
-            3. Confusion matrix and feature influence explain *why* model behaves this way.
+            **Performance interpretation protocol**
+            - **Metric rationale**: Accuracy captures global correctness; Macro F1 equal-weights classes and protects minority safety outcomes.
+            - **Model selection logic**: choose model via multi-metric comparison, not single-score optimization.
+            - **Mechanism inspection**: confusion matrix localizes class-level failure modes; feature influence supports behavioral interpretation.
+            - **Claim boundary**: report as sample-level predictive evidence, not definitive citywide performance.
             """,
             """
-            **本模块怎么看**
-            1. Accuracy 看整体，Macro F1 保护少数类（尤其 fatal）。
-            2. 先比较候选模型，再做选择，不拍脑袋定模型。
-            3. 通过混淆矩阵和特征影响解释“模型为什么这样预测”。
+            **模型表现解读协议**
+            - **指标依据**：Accuracy反映整体正确率；Macro F1对各类别等权，避免少数类（尤其fatal）被淹没。
+            - **选模逻辑**：基于多指标比较做模型取舍，而非单一分数最大化。
+            - **机制解释**：混淆矩阵定位类别级失误模式，特征影响用于解释模型行为路径。
+            - **结论边界**：结果应表述为样本级预测证据，而非城市级最终结论。
             """,
         ),
         "reliability": t(
             """
-            **How to read this module**
-            1. K-fold mean/std reflects result stability.
-            2. Time-based holdout simulates future deployment behavior.
-            3. Fatal recall is a safety-sensitive risk metric to monitor separately.
+            **Reliability interpretation protocol**
+            - **Internal stability**: stratified K-fold mean/std indicates estimator variance under resampling.
+            - **Temporal generalization**: time-based holdout approximates deployment under distribution shift.
+            - **Safety focus**: fatal-class recall is monitored separately because false negatives are high-cost errors.
+            - **Practical meaning**: reliability metrics determine whether performance is repeatable, not accidental.
             """,
             """
-            **本模块怎么看**
-            1. K折的均值和方差用于评估结果稳定性。
-            2. 时间外推切分模拟真实上线后的时间漂移风险。
-            3. Fatal 召回率是安全场景的关键风险指标，需要单独看。
+            **可靠性解读协议**
+            - **内部稳定性**：分层K折均值/方差用于评估估计量在重采样下的波动。
+            - **时间泛化能力**：时间外推切分用于模拟部署后的分布漂移情境。
+            - **安全优先指标**：fatal类召回率单独监控，因为漏检属于高代价错误。
+            - **实践意义**：可靠性指标回答“结果是否可复现”，而不只是“这次是否跑得好”。
             """,
         ),
         "error": t(
             """
-            **How to read this module**
-            1. Error cases locate where model fails, not where it succeeds.
-            2. Analyze feature patterns around misclassification.
-            3. Convert findings into next-step feature or data collection actions.
+            **Error-analysis interpretation protocol**
+            - **Failure localization**: inspect where predictions fail by class pair (`actual -> predicted`).
+            - **Context patterning**: examine whether specific weather/traffic contexts are over-represented among errors.
+            - **Actionability**: translate error signatures into concrete data or feature interventions.
+            - **Research value**: this module supports falsification and refinement, not model promotion.
             """,
             """
-            **本模块怎么看**
-            1. 误差分析关注“模型错在哪里”，而不只是对在哪里。
-            2. 观察误判样本周边的特征模式。
-            3. 把误差结论转化为下一步数据补全与特征改进动作。
+            **误差分析解读协议**
+            - **失误定位**：按类别对（`真实 -> 预测`）识别模型失败位置。
+            - **情境模式识别**：观察误判样本是否集中在特定天气/交通上下文。
+            - **可执行转化**：将误差特征转化为数据补全或特征改造任务。
+            - **研究价值**：本模块用于证伪与改进，而非单纯证明模型“有效”。
             """,
         ),
         "predict": t(
             """
-            **How to read this module**
-            1. This is a scenario simulator, not a production decision engine.
-            2. Modify features to test sensitivity (rain/peak-hour/vehicles).
-            3. Use probability distribution, not only top-1 class, for interpretation.
+            **Prediction module interpretation protocol**
+            - **Usage mode**: single-case inference is a scenario simulator for sensitivity analysis.
+            - **Controlled perturbation**: change one factor at a time (e.g., precipitation, hour, vehicles) to observe directional response.
+            - **Probabilistic reading**: interpret full class-probability vector, not only top-1 label.
+            - **Operational caution**: outputs require human oversight and policy context before action.
             """,
             """
-            **本模块怎么看**
-            1. 这里是场景模拟器，不是生产级自动决策引擎。
-            2. 可调雨量、高峰时段、车辆数观察模型敏感性。
-            3. 解释时看概率分布，不只看第一名类别。
+            **预测模块解读协议**
+            - **使用方式**：单样本推断用于情景模拟与敏感性分析。
+            - **受控扰动**：一次改变一个变量（如降水、时段、车辆数），观察方向性响应。
+            - **概率化解读**：必须结合完整类别概率分布，而非只看Top-1类别。
+            - **应用约束**：预测结果需结合人工判断与政策语境，不能直接自动执行。
             """,
         ),
         "limits": t(
             """
-            **How to read this module**
-            1. We explicitly separate demo evidence from policy-level conclusions.
-            2. Known limitations are documented to prevent over-claiming.
-            3. Next-step items are concrete and execution-oriented.
+            **Limitations interpretation protocol**
+            - **External validity**: sample/demo evidence may not generalize to full-city distribution.
+            - **Uncertainty disclosure**: unresolved bias sources are explicitly documented.
+            - **Roadmap discipline**: next steps are prioritized by impact on validity, not by algorithm novelty.
+            - **Professional standard**: transparent limitation reporting increases credibility.
             """,
             """
-            **本模块怎么看**
-            1. 明确区分“演示证据”与“政策级结论”。
-            2. 主动写出局限，防止过度宣称。
-            3. 下一步必须是可执行任务，而不是泛泛而谈。
+            **局限模块解读协议**
+            - **外部有效性**：演示样本证据不等同于城市全量数据上的可泛化表现。
+            - **不确定性披露**：主动公开仍未解决的偏差来源与数据盲区。
+            - **路线优先级**：下一步以“提升有效性”为先，而不是“追求算法新颖”。
+            - **专业性标准**：透明呈现局限可显著提升研究可信度。
             """,
         ),
     }
     st.info(explainers.get(section_key, ""))
+
+
+def _render_figure_explainer(figure_key: str, t):
+    explainers = {
+        "model_comparison": t(
+            """
+            **Figure interpretation**
+            - X-axis: candidate models; Y-axis: score value.
+            - `Accuracy` reflects global correctness; `Macro F1` reflects class-balanced performance.
+            - If bars diverge, prioritize Macro F1 when safety minority classes are policy-critical.
+            - Practical meaning: model choice is a trade-off between overall fit and class fairness.
+            """,
+            """
+            **图像解读**
+            - 横轴为候选模型，纵轴为指标得分。
+            - `Accuracy` 表示整体正确率，`Macro F1` 表示类别均衡表现。
+            - 若两者差异明显，在安全场景中应优先参考 Macro F1。
+            - 实践意义：选模是“整体拟合”与“类别公平”之间的取舍。
+            """,
+        ),
+        "confusion_matrix": t(
+            """
+            **Figure interpretation**
+            - Diagonal cells are correct classifications; off-diagonals are error transfers.
+            - Focus on `Fatal -> non-Fatal` errors (false negatives) due to high safety risk.
+            - Row-wise concentration indicates which true class is difficult for the model.
+            - Practical meaning: this figure identifies where targeted data enrichment is needed.
+            """,
+            """
+            **图像解读**
+            - 对角线表示预测正确，非对角线表示类别误判流向。
+            - 重点关注 `Fatal -> 非Fatal` 的漏检，这类错误安全代价最高。
+            - 按行观察可判断模型对哪类真实样本识别困难。
+            - 实践意义：该图用于定位后续应优先补强的数据情境。
+            """,
+        ),
+        "feature_importance": t(
+            """
+            **Figure interpretation**
+            - Higher importance indicates larger contribution to split/decision patterns.
+            - Importance is model-dependent and does not imply causal effect magnitude.
+            - Compare top factors with domain knowledge to assess plausibility.
+            - Practical meaning: prioritize high-impact features for quality control and enrichment.
+            """,
+            """
+            **图像解读**
+            - 重要性越高，表示该特征在模型决策路径中的贡献越大。
+            - 重要性是模型内部量，不代表严格因果效应大小。
+            - 需与交通领域知识对照判断解释是否合理。
+            - 实践意义：可据此优先投入高影响特征的数据治理与扩展。
+            """,
+        ),
+    }
+    st.caption(explainers.get(figure_key, ""))
 
 
 def main() -> None:
@@ -285,6 +357,12 @@ def main() -> None:
         if sample_df.empty:
             st.warning(t("Sample data not found.", "未找到样本数据。"))
         else:
+            st.markdown(
+                t(
+                    "**Step evidence**: preview is used for schema/measurement sanity-check before feature engineering.",
+                    "**步骤证据**：此预览用于特征工程前的结构与测量合理性校验。",
+                )
+            )
             st.dataframe(sample_df.head(20), use_container_width=True)
             st.write(t(f"Rows: {len(sample_df)}", f"样本行数：{len(sample_df)}"))
         st.markdown(
@@ -309,6 +387,12 @@ def main() -> None:
             st.info(t("No metrics file found. Run training first.", "未找到指标文件，请先运行训练。"))
         else:
             st.metric(t("Removed invalid target labels", "剔除异常目标标签"), int(metrics.get("rows_removed_invalid_target", 0)))
+            st.caption(
+                t(
+                    "Interpretation: this count is a direct audit trail of label governance strictness.",
+                    "解读：该计数是标签治理严格性的直接审计证据。",
+                )
+            )
             missing_rate = metrics.get("missing_rate_by_feature", {})
             if missing_rate:
                 df_missing = (
@@ -321,8 +405,8 @@ def main() -> None:
                 st.dataframe(df_missing, use_container_width=True)
                 st.caption(
                     t(
-                        "Missing-rate is computed before imputation and used as data quality evidence.",
-                        "缺失率在填补前统计，用于展示数据质量证据。",
+                        "Missing-rate is computed before imputation; high-missing features imply larger uncertainty propagation risk.",
+                        "缺失率在插补前计算；高缺失特征意味着更高的不确定性传播风险。",
                     )
                 )
             else:
@@ -352,9 +436,13 @@ def main() -> None:
                     model_compare_df.set_index("model_name")[["accuracy", "f1_macro"]],
                     use_container_width=True,
                 )
-            _safe_image(FIGURES_DIR / "model_comparison.png", t("Model Comparison Figure", "模型对比图"))
-            _safe_image(FIGURES_DIR / "confusion_matrix.png", t("Confusion Matrix (Selected Model)", "混淆矩阵（选中模型）"))
-            _safe_image(FIGURES_DIR / "feature_importance.png", t("Feature Influence", "特征影响图"))
+                _render_figure_explainer("model_comparison", t)
+            if _safe_image(FIGURES_DIR / "model_comparison.png", t("Model Comparison Figure", "模型对比图")):
+                _render_figure_explainer("model_comparison", t)
+            if _safe_image(FIGURES_DIR / "confusion_matrix.png", t("Confusion Matrix (Selected Model)", "混淆矩阵（选中模型）")):
+                _render_figure_explainer("confusion_matrix", t)
+            if _safe_image(FIGURES_DIR / "feature_importance.png", t("Feature Influence", "特征影响图")):
+                _render_figure_explainer("feature_importance", t)
             if not feature_importance_df.empty:
                 st.markdown(t("Top feature influence table", "特征影响Top表"))
                 st.dataframe(feature_importance_df.head(10), use_container_width=True)
@@ -370,10 +458,22 @@ def main() -> None:
                 cv_df = pd.DataFrame(cv_rows)
                 st.markdown(t("Stratified K-Fold results", "分层K折结果"))
                 st.dataframe(cv_df, use_container_width=True)
+                st.caption(
+                    t(
+                        "Interpretation: report mean and dispersion jointly; low variance indicates stable resampling behavior.",
+                        "解读：应联合报告均值与离散程度；方差越低，重采样稳定性越好。",
+                    )
+                )
             time_holdout = metrics_cv.get("time_holdout", {})
             st.markdown(t("Time-based holdout (simulation of real deployment)", "时间外推切分（模拟真实部署）"))
             if time_holdout.get("available"):
                 st.json(time_holdout)
+                st.caption(
+                    t(
+                        "Interpretation: this split approximates future deployment, so degradation here is operationally important.",
+                        "解读：该切分近似未来上线场景，因此这里的性能下降具有直接运营意义。",
+                    )
+                )
             else:
                 st.warning(time_holdout.get("reason", t("Time holdout unavailable.", "时间外推不可用。")))
             if metrics:
@@ -404,6 +504,12 @@ def main() -> None:
                 if c in error_cases_df.columns
             ]
             st.dataframe(error_cases_df[display_cols], use_container_width=True)
+            st.caption(
+                t(
+                    "Interpretation: each row is a failure case for targeted diagnostics; prioritize recurring error patterns over isolated outliers.",
+                    "解读：每一行都是可定位的失败样本；应优先处理重复出现的模式性误差，而非个别离群点。",
+                )
+            )
         if metrics:
             observations = metrics.get("error_analysis_observations", [])
             if observations:
