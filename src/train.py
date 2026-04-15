@@ -126,6 +126,15 @@ def _fatal_recall(y_true: np.ndarray, y_pred: np.ndarray, fatal_class_index: int
 
 
 def _run_cv_reliability(X: pd.DataFrame, y: pd.Series, random_seed: int, class_labels: list[str]) -> dict[str, Any]:
+    max_rows = 120000
+    if len(X) > max_rows:
+        X, _, y, _ = train_test_split(
+            X,
+            y,
+            train_size=max_rows,
+            random_state=random_seed,
+            stratify=y,
+        )
     min_count = int(y.value_counts().min())
     n_splits = max(2, min(5, min_count))
     cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_seed)
@@ -375,6 +384,7 @@ def main() -> None:
         y_test=y_test,
         random_seed=settings.train.random_seed,
         metric_key=settings.train.model_selection_metric,
+        enable_hyperparameter_search=settings.train.enable_hyperparameter_search,
     )
     best_pred = best.pipeline.predict(X_test)
 

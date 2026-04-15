@@ -1,12 +1,12 @@
 {
-  "dataset_used": "/Users/linxinyi/casa_revise/casa0006/data/sample/merged_sample.csv",
-  "rows_raw": 36,
-  "rows_valid_target": 35,
-  "rows_invalid_target": 1,
+  "dataset_used": "/Users/linxinyi/casa_revise/casa0006/data/processed/processed_master.parquet",
+  "rows_raw": 503475,
+  "rows_valid_target": 503475,
+  "rows_invalid_target": 0,
   "target_distribution_after_filter": {
-    "1": 14,
-    "2": 15,
-    "3": 6
+    "1": 7491,
+    "2": 109977,
+    "3": 386007
   },
   "missing_rate_by_feature": {
     "number_of_vehicles": 0.0,
@@ -16,26 +16,26 @@
     "month": 0.0,
     "is_weekend": 0.0,
     "season": 0.0,
-    "cloud_cover": 0.0,
-    "sunshine": 0.0,
-    "global_radiation": 0.0,
-    "max_temp": 0.0,
-    "mean_temp": 0.0,
-    "min_temp": 0.0,
-    "precipitation": 0.0,
-    "pressure": 0.0,
+    "cloud_cover": 0.8190933015541983,
+    "sunshine": 0.8188609166294255,
+    "global_radiation": 0.8188609166294255,
+    "max_temp": 0.8220467749143453,
+    "mean_temp": 0.822511544763891,
+    "min_temp": 0.8196653259844083,
+    "precipitation": 0.821550225929788,
+    "pressure": 0.8188609166294255,
     "snow": 0.0,
     "hour_peak": 0.0,
     "precipitation_peak_interaction": 0.0,
     "low_visibility_proxy": 0.0
   },
   "date_coverage": {
-    "min": "2019-01-03",
-    "max": "2020-05-22",
-    "unique_days": 36
+    "min": "2020-01-01",
+    "max": "2024-12-31",
+    "unique_days": 1827
   },
   "spatial_coverage": {
-    "unique_spatial_keys": 1,
-    "unknown_spatial_key_ratio": 1.0
+    "unique_spatial_keys": 35411,
+    "unknown_spatial_key_ratio": 0.0
   }
 }

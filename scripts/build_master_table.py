@@ -43,23 +43,31 @@ def load_bank_holidays(path: Path) -> pd.DataFrame:
 def aggregate_vehicle(vehicle: pd.DataFrame) -> pd.DataFrame:
     if vehicle.empty:
         return pd.DataFrame(columns=["accident_index", "vehicle_record_count"])
-    grouped = vehicle.groupby("accident_index", dropna=False).size().rename("vehicle_record_count").reset_index()
+    join_key = "accident_index" if "accident_index" in vehicle.columns else "collision_index"
+    grouped = vehicle.groupby(join_key, dropna=False).size().rename("vehicle_record_count").reset_index()
     if "number_of_vehicles" in vehicle.columns:
-        num = vehicle.groupby("accident_index", dropna=False)["number_of_vehicles"].max().reset_index()
-        grouped = grouped.merge(num, on="accident_index", how="left")
+        num = vehicle.groupby(join_key, dropna=False)["number_of_vehicles"].max().reset_index()
+        grouped = grouped.merge(num, on=join_key, how="left")
+    grouped = grouped.rename(columns={join_key: "accident_index"})
     return grouped
 
 
 def aggregate_casualty(casualty: pd.DataFrame) -> pd.DataFrame:
     if casualty.empty:
         return pd.DataFrame(columns=["accident_index", "casualty_record_count"])
-    grouped = casualty.groupby("accident_index", dropna=False).size().rename("casualty_record_count").reset_index()
+    join_key = "accident_index" if "accident_index" in casualty.columns else "collision_index"
+    grouped = casualty.groupby(join_key, dropna=False).size().rename("casualty_record_count").reset_index()
+    grouped = grouped.rename(columns={join_key: "accident_index"})
     return grouped
 
 
 def build_master(collision: pd.DataFrame, vehicle: pd.DataFrame, casualty: pd.DataFrame, weather: pd.DataFrame, holidays: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     collision = collision.copy()
-    collision["date"] = pd.to_datetime(collision["date"], errors="coerce")
+    if "accident_index" not in collision.columns and "collision_index" in collision.columns:
+        collision["accident_index"] = collision["collision_index"]
+    if "accident_severity" not in collision.columns and "collision_severity" in collision.columns:
+        collision["accident_severity"] = collision["collision_severity"]
+    collision["date"] = pd.to_datetime(collision["date"], errors="coerce", dayfirst=True)
     weather = weather.copy()
     weather["date"] = pd.to_datetime(weather["date"], errors="coerce")
 

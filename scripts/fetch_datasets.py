@@ -21,6 +21,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Disable SSL certificate verification when downloading HTTPS sources.",
     )
+    parser.add_argument(
+        "--skip-dft",
+        action="store_true",
+        help="Skip DfT collision/vehicle/casualty downloads (use existing local files).",
+    )
+    parser.add_argument(
+        "--skip-existing",
+        action="store_true",
+        help="Do not download files that already exist locally.",
+    )
     return parser.parse_args()
 
 
@@ -45,8 +55,11 @@ def _read_csv_from_url(url: str, verify_ssl: bool) -> pd.DataFrame:
     return pd.read_csv(StringIO(response.text), low_memory=False)
 
 
-def fetch_dft_collision(cfg: dict, from_date: str, to_date: str, verify_ssl: bool) -> Path:
+def fetch_dft_collision(cfg: dict, from_date: str, to_date: str, verify_ssl: bool, skip_existing: bool = False) -> Path:
     output = Path(cfg["paths"]["collision_file"]).resolve()
+    if skip_existing and output.exists():
+        print(f"Using existing DfT collision file: {output}")
+        return output
     url = cfg["sources"]["dft_collision_url"]
     print(f"Downloading DfT collision data from: {url}")
     df = _read_csv_from_url(url, verify_ssl=verify_ssl)
@@ -58,8 +71,11 @@ def fetch_dft_collision(cfg: dict, from_date: str, to_date: str, verify_ssl: boo
     return output
 
 
-def fetch_dft_vehicle(cfg: dict, verify_ssl: bool) -> Path:
+def fetch_dft_vehicle(cfg: dict, verify_ssl: bool, skip_existing: bool = False) -> Path:
     output = Path(cfg["paths"]["vehicle_file"]).resolve()
+    if skip_existing and output.exists():
+        print(f"Using existing DfT vehicle file: {output}")
+        return output
     url = cfg["sources"]["dft_vehicle_url"]
     print(f"Downloading DfT vehicle data from: {url}")
     df = _read_csv_from_url(url, verify_ssl=verify_ssl)
@@ -68,8 +84,11 @@ def fetch_dft_vehicle(cfg: dict, verify_ssl: bool) -> Path:
     return output
 
 
-def fetch_dft_casualty(cfg: dict, verify_ssl: bool) -> Path:
+def fetch_dft_casualty(cfg: dict, verify_ssl: bool, skip_existing: bool = False) -> Path:
     output = Path(cfg["paths"]["casualty_file"]).resolve()
+    if skip_existing and output.exists():
+        print(f"Using existing DfT casualty file: {output}")
+        return output
     url = cfg["sources"]["dft_casualty_url"]
     print(f"Downloading DfT casualty data from: {url}")
     df = _read_csv_from_url(url, verify_ssl=verify_ssl)
@@ -78,8 +97,11 @@ def fetch_dft_casualty(cfg: dict, verify_ssl: bool) -> Path:
     return output
 
 
-def fetch_weather(cfg: dict, from_date: str, to_date: str) -> Path:
+def fetch_weather(cfg: dict, from_date: str, to_date: str, skip_existing: bool = False) -> Path:
     output = Path(cfg["paths"]["weather_file"]).resolve()
+    if skip_existing and output.exists():
+        print(f"Using existing weather data: {output}")
+        return output
     dataset_name = cfg["sources"]["kaggle_weather_dataset"]
     try:
         import kagglehub
@@ -97,8 +119,11 @@ def fetch_weather(cfg: dict, from_date: str, to_date: str) -> Path:
     return output
 
 
-def fetch_bank_holidays(cfg: dict, verify_ssl: bool) -> Path:
+def fetch_bank_holidays(cfg: dict, verify_ssl: bool, skip_existing: bool = False) -> Path:
     output = Path(cfg["paths"]["bank_holidays_file"]).resolve()
+    if skip_existing and output.exists():
+        print(f"Using existing bank holidays JSON: {output}")
+        return output
     url = cfg["sources"]["gov_bank_holidays_url"]
     print(f"Downloading bank holidays from: {url}")
     response = requests.get(url, timeout=30, verify=verify_ssl)
@@ -132,11 +157,17 @@ def main() -> None:
     verify_ssl = not args.allow_insecure_ssl
 
     outputs: dict[str, str] = {}
-    outputs["collision_file"] = str(fetch_dft_collision(cfg, from_date, to_date, verify_ssl=verify_ssl))
-    outputs["vehicle_file"] = str(fetch_dft_vehicle(cfg, verify_ssl=verify_ssl))
-    outputs["casualty_file"] = str(fetch_dft_casualty(cfg, verify_ssl=verify_ssl))
-    outputs["weather_file"] = str(fetch_weather(cfg, from_date, to_date))
-    outputs["bank_holidays_file"] = str(fetch_bank_holidays(cfg, verify_ssl=verify_ssl))
+    if args.skip_dft:
+        outputs["collision_file"] = str(Path(cfg["paths"]["collision_file"]).resolve())
+        outputs["vehicle_file"] = str(Path(cfg["paths"]["vehicle_file"]).resolve())
+        outputs["casualty_file"] = str(Path(cfg["paths"]["casualty_file"]).resolve())
+        print("Skipping DfT downloads and using local files.")
+    else:
+        outputs["collision_file"] = str(fetch_dft_collision(cfg, from_date, to_date, verify_ssl=verify_ssl, skip_existing=args.skip_existing))
+        outputs["vehicle_file"] = str(fetch_dft_vehicle(cfg, verify_ssl=verify_ssl, skip_existing=args.skip_existing))
+        outputs["casualty_file"] = str(fetch_dft_casualty(cfg, verify_ssl=verify_ssl, skip_existing=args.skip_existing))
+    outputs["weather_file"] = str(fetch_weather(cfg, from_date, to_date, skip_existing=args.skip_existing))
+    outputs["bank_holidays_file"] = str(fetch_bank_holidays(cfg, verify_ssl=verify_ssl, skip_existing=args.skip_existing))
     write_fetch_metadata(cfg, from_date, to_date, outputs)
 
 

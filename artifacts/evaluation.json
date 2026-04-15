@@ -1,58 +1,58 @@
 {
-  "model_name": "logistic_regression",
+  "model_name": "random_forest",
   "metrics": {
-    "accuracy": 1.0,
-    "f1_macro": 1.0,
+    "accuracy": 0.606409454292666,
+    "f1_macro": 0.42324541865530535,
     "classification_report": {
       "0": {
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1-score": 1.0,
-        "support": 14.0
+        "precision": 0.07674254869748885,
+        "recall": 0.6547857428914697,
+        "f1-score": 0.1373834131585581,
+        "support": 7491.0
       },
       "1": {
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1-score": 1.0,
-        "support": 15.0
+        "precision": 0.35246755049628653,
+        "recall": 0.4617329077898106,
+        "f1-score": 0.3997685467649687,
+        "support": 109977.0
       },
       "2": {
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1-score": 1.0,
-        "support": 6.0
+        "precision": 0.8447900098142069,
+        "recall": 0.6466903449937437,
+        "f1-score": 0.7325842960423891,
+        "support": 386007.0
       },
-      "accuracy": 1.0,
+      "accuracy": 0.606409454292666,
       "macro avg": {
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1-score": 1.0,
-        "support": 35.0
+        "precision": 0.42466670300266074,
+        "recall": 0.5877363318916746,
+        "f1-score": 0.42324541865530535,
+        "support": 503475.0
       },
       "weighted avg": {
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1-score": 1.0,
-        "support": 35.0
+        "precision": 0.7258216585760476,
+        "recall": 0.606409454292666,
+        "f1-score": 0.6510296459168303,
+        "support": 503475.0
       }
     },
     "confusion_matrix": [
       [
-        14,
-        0,
-        0
+        4905,
+        1171,
+        1415
       ],
       [
-        0,
-        15,
-        0
+        14749,
+        50780,
+        44448
       ],
       [
-        0,
-        0,
-        6
+        44261,
+        92119,
+        249627
       ]
     ]
   },
-  "rows_evaluated": 35
+  "rows_evaluated": 503475
 }
