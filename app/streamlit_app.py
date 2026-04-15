@@ -82,136 +82,130 @@ def _render_module_explainer(section_key: str, t):
     explainers = {
         "overview": t(
             """
-            **What this project is about**
-            - This project asks a simple question: given weather and road context, can we estimate accident severity (`Slight/Serious/Fatal`)?
-            - Think of each row as one real accident snapshot. The model learns patterns from many snapshots.
-            - This is a **prediction** project, not a **causality** project:
-            causality means proving "X directly causes Y", while prediction means "X helps us estimate Y".
-            - The result is a risk-support tool, not an automatic decision maker.
+            **Project scope**
+            - The project studies whether weather and road context can support severity classification in three levels `Slight` `Serious` `Fatal`.
+            - Each row represents one collision context. The model learns repeated patterns across many observations.
+            - The work is predictive rather than causal. Prediction estimates risk level while causality tests direct mechanism.
+            - Results are designed for risk communication and decision support in early analysis.
             """,
             """
-            **这个项目在讲什么**
-            - 这个项目回答一个直白的问题：给定天气和道路信息，能否估计事故严重度（`Slight/Serious/Fatal`）？
-            - 你可以把每一行数据理解成“一次真实事故现场快照”，模型从大量快照中学习规律。
-            - 这是**预测**项目，不是**因果**项目：
-            因果是证明“X导致Y”，预测是“X能帮助估计Y”。
-            - 结果用于风险提示和辅助判断，不是自动执法或自动决策系统。
+            **项目范围**
+            - 本项目关注一个核心问题。天气与道路信息是否能够支持事故严重度三级分类 `Slight` `Serious` `Fatal`。
+            - 每一行数据对应一次事故场景。模型从大量场景中提取可重复规律。
+            - 研究定位为预测分析，不是因果识别。预测用于估计风险水平，因果用于验证直接作用机制。
+            - 输出主要服务于风险沟通与早期决策支持。
             """,
         ),
         "data": t(
             """
-            **What we do in this tab**
-            - First, we check whether key columns exist and look reasonable (`date/time/severity`).
-            - Then we identify useful signals, such as rain, pressure, temperature, and vehicle/casualty counts.
-            - We also mark risky columns that may be missing too much or may cause data leakage.
-            data leakage means the model accidentally sees "future/answer-like" information during training.
-            - In short, this tab defines what information the model can honestly use.
+            **Data preparation logic**
+            - The first step checks whether key fields are complete and structurally valid, including date, time, and severity label.
+            - The second step reviews potential explanatory signals such as precipitation, pressure, temperature, and vehicle related counts.
+            - Variables with high missingness or leakage risk are marked for cautious use.
+            - Leakage means training data contains hidden answer-like information and can lead to unrealistically high scores.
             """,
             """
-            **这个页面在做什么**
-            - 先检查关键字段在不在、格式对不对（`date/time/severity`）。
-            - 再看哪些字段真的有帮助，比如降水、气压、温度、车辆数、伤亡数。
-            - 同时标记高风险字段：缺失太多，或可能造成数据泄漏。
-            数据泄漏就是训练时“偷看答案”或“偷看未来信息”。
-            - 简单说，这一页定义了模型可以“合法学习”的信息范围。
+            **数据准备逻辑**
+            - 首先检查关键字段是否齐全且格式有效，重点包括日期、时间与严重度标签。
+            - 然后筛查可解释风险的候选变量，例如降水、气压、温度与车辆相关计数。
+            - 对高缺失字段与潜在泄漏字段进行标记，避免直接进入训练。
+            - 泄漏指训练阶段混入近似答案的信息，常会造成不真实的高分表现。
             """,
         ),
         "quality": t(
             """
-            **Why this tab matters**
-            - We clean abnormal labels first (for example `-10`), because noisy labels will directly mislead the model.
-            - We calculate missing rate for each feature to see where uncertainty may come from.
-            - We keep cleaning counts transparent: how many rows were removed and how many stayed.
-            - Core message: if data quality is weak, model scores are not trustworthy.
+            **Data quality evidence**
+            - Abnormal target codes such as `-10` are removed before modeling to reduce label noise.
+            - Feature level missing rates are reported to reveal potential uncertainty in downstream estimates.
+            - Cleaning actions are tracked with explicit counts so the process remains auditable and reproducible.
+            - This module defines the reliability baseline for all later model conclusions.
             """,
             """
-            **为什么这一页很重要**
-            - 先清理异常标签（比如 `-10`），因为脏标签会直接把模型带偏。
-            - 按特征计算缺失率，找出不确定性来源。
-            - 所有清洗动作都给出数量证据：剔除了多少、保留了多少。
-            - 核心结论：数据质量不过关，模型分数再好也不可信。
+            **数据质量证据**
+            - 建模前先剔除异常标签，例如 `-10`，以降低标签噪声对模型方向的干扰。
+            - 按特征给出缺失率，帮助识别后续估计中的不确定来源。
+            - 所有清洗动作均保留数量记录，流程可以追溯，也便于复现。
+            - 该模块决定了后续模型结论的可信下限。
             """,
         ),
         "performance": t(
             """
-            **How to read model results**
-            - We compare multiple models instead of trusting one model by default.
-            - `Accuracy` = overall hit rate; `Macro F1` = average class performance (gives minority class fair weight).
-            - We then use confusion matrix and feature-importance charts to explain where the model works and where it fails.
-            - This is sample-level evidence, so we avoid over-claiming.
+            **Performance interpretation**
+            - Multiple models are compared under the same setting to support transparent selection.
+            - Accuracy reflects overall correctness. Macro F1 reflects balanced performance across classes and protects minority outcomes.
+            - Confusion matrix and feature influence plots are used to interpret error structure and decision pattern.
+            - Reported values are treated as sample level evidence with controlled claims.
             """,
             """
-            **模型结果怎么读**
-            - 我们先比较多个模型，而不是默认某一个最好。
-            - `Accuracy` 是整体命中率；`Macro F1` 是各类别平均表现（会公平照顾少数类）。
-            - 再结合混淆矩阵和特征影响图解释“哪里预测得好、哪里容易错”。
-            - 这里是样本级证据，不做夸大结论。
+            **模型表现解读**
+            - 在相同条件下比较多个模型，再进行选择，避免单模型偏见。
+            - Accuracy反映整体正确率。Macro F1反映类别均衡表现，对少数类更敏感。
+            - 结合混淆矩阵和特征影响图，可定位误差结构并解释模型判别路径。
+            - 当前结果属于样本级证据，结论保持克制，不做外推夸大。
             """,
         ),
         "reliability": t(
             """
-            **Why we still need this tab after good scores**
-            - A single test score may be luck, so we use K-fold validation to check stability.
-            K-fold means splitting data into several folds and repeating training/testing.
-            - We also test by time order to mimic real deployment (train on past, test on later data).
-            - We track fatal recall separately because missing a high-risk case has higher cost.
-            - This tab answers: "Can performance repeat in a more realistic setting?"
+            **Reliability checks**
+            - Single split performance can be unstable. K-fold validation measures repeatability under resampling.
+            - Time based holdout simulates practical deployment by training on earlier data and testing on later periods.
+            - Fatal class recall is reported separately because false negatives in high severity events carry larger risk.
+            - This module focuses on stability and transferability rather than peak score only.
             """,
             """
-            **为什么分数不错还要看这一页**
-            - 单次测试高分可能是运气，所以要用K折验证看稳定性。
-            K折就是把数据分成多份，轮流训练和测试。
-            - 还要按时间切分，模拟真实上线（用过去训练、用未来测试）。
-            - fatal类召回率单独看，因为高风险事故漏判代价更高。
-            - 这一页回答的是：“结果能不能稳定复现？”
+            **可靠性检验**
+            - 单次切分结果可能受随机性影响。K折验证用于评估重采样条件下的稳定程度。
+            - 时间外推切分用于模拟真实部署，采用过去训练、未来测试的方式。
+            - Fatal类召回率单独报告，因为高严重度漏检具有更高风险成本。
+            - 本模块强调稳定性与可迁移性，而不仅是单点高分。
             """,
         ),
         "error": t(
             """
-            **What we learn from mistakes**
-            - We list wrong predictions to see exactly what kind of cases confuse the model.
-            - We check whether errors cluster under specific conditions (e.g., rain, high traffic load).
-            - Then we turn these findings into actions: collect better data or add better features.
-            - This is the most practical tab: it tells us how to improve next.
+            **Error analysis purpose**
+            - Misclassified samples are listed to locate concrete failure patterns.
+            - Environmental and traffic context around errors is examined to identify recurring difficulty zones.
+            - Findings are translated into actionable improvements in feature design and data enrichment.
+            - This module connects model diagnosis with the next round of iteration.
             """,
             """
-            **从错误里学到什么**
-            - 把预测错误样本列出来，看模型到底被什么情况“绊住”。
-            - 观察误差是否集中在某些情境（例如降雨、交通负荷高）。
-            - 再把发现转成改进动作：补数据、改特征、调模型。
-            - 这是最实用的一页：直接告诉我们下一步该怎么优化。
+            **误差分析目的**
+            - 列出误判样本，定位模型失败的具体模式。
+            - 结合天气与交通上下文观察误差是否在特定场景中反复出现。
+            - 将诊断结论转化为可执行改进，包括特征重构与数据补全。
+            - 本模块用于把模型问题连接到下一轮迭代动作。
             """,
         ),
         "predict": t(
             """
-            **How to use this tab**
-            - This is a sandbox: change inputs and observe how prediction changes.
-            - Best practice is one-factor-at-a-time testing, so you can see each factor's effect clearly.
-            - Do not look only at the top class; the probability distribution gives richer risk information.
-            - It is for demonstration and understanding, not direct field decision.
+            **Scenario prediction use**
+            - This page serves as an interactive sandbox for single case inference.
+            - Controlled one factor changes help reveal directional sensitivity of model outputs.
+            - Full probability distribution should be read together with top class label.
+            - The module is intended for demonstration, explanation, and preliminary assessment.
             """,
             """
-            **这一页怎么用**
-            - 这是一个沙盒：改输入，看预测怎么变化。
-            - 建议一次只改一个变量，这样更容易看清单个因素的影响。
-            - 不只看第一名类别，要看完整概率分布，风险信息更充分。
-            - 主要用于演示和理解，不用于直接现场决策。
+            **情景预测用途**
+            - 本页提供单样本推断沙盒，用于观察输入变化后的输出响应。
+            - 采用单因素逐步调整，更容易识别变量对结果的方向性影响。
+            - 除Top类别外，还应结合完整概率分布进行风险阅读。
+            - 该模块用于演示解释与初步评估，不直接替代现场决策。
             """,
         ),
         "limits": t(
             """
-            **How to close the story responsibly**
-            - We clearly state what this demo can prove and what it cannot prove.
-            - We list current weak points (data coverage, time/space features, external sources not fully integrated).
-            - We provide concrete next steps so the project can continue growing.
-            - Honest limitation reporting makes the project more credible in interviews.
+            **Limitations and roadmap**
+            - Boundaries of current evidence are stated explicitly to prevent over interpretation.
+            - Known gaps include limited coverage, limited spatiotemporal granularity, and partial external data linkage.
+            - Next steps are defined as executable tasks with clear validation targets.
+            - Transparent reporting of limits improves credibility and practical value.
             """,
             """
-            **如何把故事收好**
-            - 明确说清这个Demo能证明什么、不能证明什么。
-            - 公开当前不足（数据覆盖、时空特征有限、外部数据还未完全接入）。
-            - 给出可执行的下一步，让项目能继续迭代成长。
-            - 在面试里，坦诚局限反而更显专业和可信。
+            **局限与路线**
+            - 先明确现有证据边界，避免结论超出数据支持范围。
+            - 当前短板包括覆盖范围有限、时空粒度不足、外部数据接入不完整。
+            - 下一步以可执行任务形式展开，并配套可检验的结果目标。
+            - 透明呈现局限可提升项目可信度与应用价值。
             """,
         ),
     }
@@ -222,52 +216,50 @@ def _render_figure_explainer(figure_key: str, t):
     explainers = {
         "model_comparison": t(
             """
-            **How to read this chart**
-            - X-axis is model name; Y-axis is score.
-            - `Accuracy` = overall correctness; `Macro F1` = balanced class performance.
-            - If one model has similar Accuracy but higher Macro F1, it is usually safer for minority classes.
-            - So this chart helps explain why we selected one model over others.
+            **Reading guide**
+            - Horizontal axis shows model names. Vertical axis shows evaluation scores.
+            - Accuracy indicates overall correctness. Macro F1 indicates balance across classes.
+            - When Accuracy is close, higher Macro F1 usually means better treatment of minority classes.
+            - The chart supports model selection with visible tradeoff evidence.
             """,
             """
-            **这张图怎么读**
-            - 横轴是模型名，纵轴是得分。
-            - `Accuracy` 看整体正确率；`Macro F1` 看各类别是否被公平对待。
-            - 如果 Accuracy 差不多但 Macro F1 更高，通常说明对少数类更友好。
-            - 所以这张图用于解释“为什么最后选这个模型”。
+            **读图说明**
+            - 横轴为模型名称，纵轴为评估得分。
+            - Accuracy代表整体正确率。Macro F1代表类别均衡表现。
+            - 当Accuracy接近时，Macro F1更高通常意味着对少数类更稳健。
+            - 该图用于展示选模过程中的权衡依据。
             """,
         ),
         "confusion_matrix": t(
             """
-            **How to read this chart**
-            - Diagonal cells are correct predictions; off-diagonal cells are mistakes.
-            - We pay special attention to `Fatal -> non-Fatal` mistakes because they are high-risk misses.
-            - If one row has many off-diagonal counts, that true class is hard for the model.
-            - This tells us which class needs more data or better features.
+            **Reading guide**
+            - Diagonal cells represent correct predictions. Off diagonal cells represent class confusion.
+            - `Fatal` predicted as non-fatal is a key risk signal because it reflects high cost misses.
+            - Rows with heavy off diagonal counts indicate classes that remain difficult for the model.
+            - The matrix helps prioritize targeted data and feature improvement.
             """,
             """
-            **这张图怎么读**
-            - 对角线是预测正确，非对角线是预测错误。
-            - 重点看 `Fatal -> 非Fatal`，这是高风险漏判。
-            - 某一行非对角线很多，说明模型对该真实类别识别困难。
-            - 这张图直接告诉我们该优先补哪类数据和特征。
+            **读图说明**
+            - 对角线表示预测正确，非对角线表示类别混淆。
+            - `Fatal`被预测为非Fatal属于高风险漏判，需重点关注。
+            - 某一行非对角线计数较高，说明该真实类别识别难度较大。
+            - 该图可用于确定优先补强的数据与特征方向。
             """,
         ),
         "feature_importance": t(
             """
-            **How to read this chart**
-            - Higher value means this feature influences model decisions more.
-            - Important reminder: importance is not causality.
-            causality means "direct cause", while importance means "useful for prediction".
-            - Compare top features with traffic common sense to judge whether results are reasonable.
-            - This helps us prioritize feature engineering and data collection.
+            **Reading guide**
+            - Higher value means stronger contribution to model decision rules.
+            - Feature importance is not causal proof. It reflects predictive usefulness under current model structure.
+            - Top features should be checked against domain knowledge for plausibility.
+            - The ranking supports prioritization in feature engineering and data collection.
             """,
             """
-            **这张图怎么读**
-            - 数值越高，说明该特征对模型决策影响越大。
-            - 重要提醒：重要性不等于因果。
-            因果是“直接导致”，重要性是“对预测有帮助”。
-            - 需要和交通常识对照，看结果是否合理。
-            - 这张图可用于确定特征工程和数据补全优先级。
+            **读图说明**
+            - 数值越高表示该特征对模型判别规则贡献越大。
+            - 特征重要性不等于因果结论。其含义是当前模型下的预测贡献度。
+            - 需要结合交通领域常识检验结果是否合理。
+            - 该排序可用于特征工程与数据补全的优先级安排。
             """,
         ),
     }
@@ -277,32 +269,32 @@ def _render_figure_explainer(figure_key: str, t):
 def _render_story_transition(section_key: str, t):
     transitions = {
         "overview": t(
-            "Next, we move from problem statement to the raw data used to answer it.",
-            "下一步我们从“问题定义”进入“原始数据”，看手里到底有什么证据。",
+            "The next section turns from research question to available evidence in raw data.",
+            "下一部分从研究问题进入原始数据证据。",
         ),
         "data": t(
-            "After confirming available data, we check data quality before any modeling.",
-            "确认数据后，下一步先做数据质量检查，再开始建模。",
+            "After data structure is confirmed, quality checks become the necessary next step.",
+            "确认数据结构后，下一步进入数据质量检验。",
         ),
         "quality": t(
-            "With cleaned data, we can now compare models and evaluate performance.",
-            "完成清洗后，进入模型对比，看看不同方法表现如何。",
+            "With cleaned data in place, model comparison and evaluation can proceed.",
+            "完成清洗后，进入模型比较与评估阶段。",
         ),
         "performance": t(
-            "Good scores are not enough, so we continue to reliability tests.",
-            "有分数还不够，接下来要验证结果是否稳定可靠。",
+            "Performance scores are followed by reliability tests to examine repeatability.",
+            "分数结果之后，需要通过可靠性检验评估可复现性。",
         ),
         "reliability": t(
-            "Then we inspect wrong predictions to find practical improvement directions.",
-            "然后进入误差分析，从错误里找出下一步优化方向。",
+            "Reliability findings lead naturally to error analysis and targeted diagnosis.",
+            "可靠性结果之后，进入误差分析与定向诊断。",
         ),
         "error": t(
-            "After understanding errors, we use the prediction sandbox for case-based demonstration.",
-            "理解误差后，可以在预测沙盒里做案例化演示。",
+            "After diagnosis of errors, case based prediction is used for scenario demonstration.",
+            "误差诊断完成后，进入案例化情景预测演示。",
         ),
         "predict": t(
-            "Finally, we summarize limitations and define concrete next steps.",
-            "最后回到局限与下一步，形成完整闭环。",
+            "The final section summarizes evidence limits and defines the next implementation targets.",
+            "最后总结证据边界，并给出下一步执行目标。",
         ),
     }
     text = transitions.get(section_key)
@@ -324,7 +316,7 @@ def main() -> None:
     st.caption(
         t(
             "From coursework to portfolio: data quality, model comparison, and deployment.",
-            "从课程作业到作品集：数据治理、模型对比与在线部署。",
+            "从课程作业走向作品集，重点展示数据治理、模型比较与在线部署。",
         )
     )
 
@@ -375,16 +367,16 @@ def main() -> None:
         st.markdown(
             t(
                 """
-                - **City context**: Road-collision severity is a key public-safety signal.
-                - **Data challenge**: Real-world labels include invalid values (e.g. `-10`), so cleaning decisions matter.
-                - **Modeling decision**: We compare baseline and tree models, and select by **Macro F1** to keep minority classes visible.
-                - **Deployment outcome**: This demo is online and reproducible from GitHub + Streamlit.
+                - **City context** Road-collision severity is a key public-safety signal.
+                - **Data challenge** Real-world labels include invalid values such as `-10`, so cleaning decisions matter.
+                - **Modeling decision** Baseline and tree models are compared, and **Macro F1** is used to preserve minority class visibility.
+                - **Deployment outcome** The demo is online and reproducible with GitHub and Streamlit.
                 """,
                 """
-                - **城市问题**：交通事故严重度是公共安全的核心信号。
-                - **数据挑战**：真实标签存在异常值（如 `-10`），必须先治理再建模。
-                - **建模决策**：采用多模型对比，并以 **Macro F1** 作为主指标，避免忽视少数类。
-                - **交付结果**：项目可在 GitHub + Streamlit 在线复现与展示。
+                - **城市问题** 交通事故严重度是公共安全的重要信号。
+                - **数据挑战** 原始标签中存在异常值，例如 `-10`，因此必须先清洗再建模。
+                - **建模决策** 采用多模型比较，并以 **Macro F1** 作为关键指标，避免少数类被忽视。
+                - **交付结果** 项目可通过 GitHub 与 Streamlit 在线复现和展示。
                 """,
             )
         )
@@ -392,7 +384,7 @@ def main() -> None:
             st.info(
                 t(
                     f"Performance note: **{metrics.get('performance_note', 'sample demo performance')}**",
-                    f"结果说明：**{metrics.get('performance_note', 'sample demo performance')}**",
+                    f"结果说明 **{metrics.get('performance_note', 'sample demo performance')}**",
                 )
             )
 
@@ -405,12 +397,12 @@ def main() -> None:
         else:
             st.markdown(
                 t(
-                    "**Step evidence**: preview is used for schema/measurement sanity-check before feature engineering.",
-                    "**步骤证据**：此预览用于特征工程前的结构与测量合理性校验。",
+                    "**Step evidence** This preview is used for schema and measurement sanity-check before feature engineering.",
+                    "**步骤证据** 此预览用于特征工程前的结构与测量合理性校验。",
                 )
             )
             st.dataframe(sample_df.head(20), use_container_width=True)
-            st.write(t(f"Rows: {len(sample_df)}", f"样本行数：{len(sample_df)}"))
+            st.write(t(f"Rows {len(sample_df)}", f"样本行数 {len(sample_df)}"))
         st.markdown(
             t(
                 """
@@ -436,8 +428,8 @@ def main() -> None:
             st.metric(t("Removed invalid target labels", "剔除异常目标标签"), int(metrics.get("rows_removed_invalid_target", 0)))
             st.caption(
                 t(
-                    "Interpretation: this count is a direct audit trail of label governance strictness.",
-                    "解读：该计数是标签治理严格性的直接审计证据。",
+                    "Interpretation This count is a direct audit trail of label-governance strictness.",
+                    "解读 该计数可直接反映标签治理的执行强度。",
                 )
             )
             missing_rate = metrics.get("missing_rate_by_feature", {})
@@ -467,7 +459,7 @@ def main() -> None:
             st.info(t("No metrics file found. Run training first.", "未找到指标文件，请先运行训练。"))
         else:
             selected = metrics.get("selected_model", "N/A")
-            st.write(t(f"Selected model: **{selected}**", f"选中模型：**{selected}**"))
+            st.write(t(f"Selected model **{selected}**", f"选中模型 **{selected}**"))
             selected_metrics = metrics.get("selected_model_metrics", {})
             c1, c2 = st.columns(2)
             c1.metric(t("Accuracy", "准确率"), f"{selected_metrics.get('accuracy', 0):.3f}")
@@ -509,8 +501,8 @@ def main() -> None:
                 st.dataframe(cv_df, use_container_width=True)
                 st.caption(
                     t(
-                        "Interpretation: report mean and dispersion jointly; low variance indicates stable resampling behavior.",
-                        "解读：应联合报告均值与离散程度；方差越低，重采样稳定性越好。",
+                        "Interpretation Mean and dispersion should be read together. Lower variance indicates more stable resampling behavior.",
+                        "解读 需要同时观察均值与离散程度。方差越低，重采样稳定性通常越好。",
                     )
                 )
             time_holdout = metrics_cv.get("time_holdout", {})
@@ -519,8 +511,8 @@ def main() -> None:
                 st.json(time_holdout)
                 st.caption(
                     t(
-                        "Interpretation: this split approximates future deployment, so degradation here is operationally important.",
-                        "解读：该切分近似未来上线场景，因此这里的性能下降具有直接运营意义。",
+                        "Interpretation This split approximates future deployment. Performance degradation here has direct operational meaning.",
+                        "解读 该切分近似未来上线场景。因此这一部分的性能下降具有直接业务意义。",
                     )
                 )
             else:
@@ -556,8 +548,8 @@ def main() -> None:
             st.dataframe(error_cases_df[display_cols], use_container_width=True)
             st.caption(
                 t(
-                    "Interpretation: each row is a failure case for targeted diagnostics; prioritize recurring error patterns over isolated outliers.",
-                    "解读：每一行都是可定位的失败样本；应优先处理重复出现的模式性误差，而非个别离群点。",
+                    "Interpretation Each row is a traceable failure case. Recurring error patterns are usually more important than isolated outliers.",
+                    "解读 每一行都是可追踪的失败样本。与个别离群点相比，重复出现的误差模式更值得优先处理。",
                 )
             )
         if metrics:
@@ -590,7 +582,7 @@ def main() -> None:
                 st.success(
                     t(
                         f"Predicted class: {class_labels[pred_idx]} (severity={pred_idx + 1})",
-                        f"预测类别：{class_labels[pred_idx]}（严重度={pred_idx + 1}）",
+                        f"预测类别 {class_labels[pred_idx]}（严重度={pred_idx + 1}）",
                     )
                 )
                 prob_table = pd.DataFrame(
