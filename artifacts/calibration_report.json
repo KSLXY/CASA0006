@@ -1,0 +1,57 @@
+{
+  "fatal_class_index": 2,
+  "sample_count": 7,
+  "brier_score": 0.0051674107868171235,
+  "expected_calibration_error": 0.035745366368159545,
+  "bins": [
+    {
+      "bin": "(-0.00099684, 4.36e-06]",
+      "count": 1,
+      "mean_predicted_probability": 3.162960367803818e-06,
+      "observed_fatal_rate": 0.0,
+      "abs_gap": 3.162960367803818e-06
+    },
+    {
+      "bin": "(4.36e-06, 0.000409]",
+      "count": 1,
+      "mean_predicted_probability": 4.557190715756082e-06,
+      "observed_fatal_rate": 0.0,
+      "abs_gap": 4.557190715756082e-06
+    },
+    {
+      "bin": "(0.000409, 0.006]",
+      "count": 1,
+      "mean_predicted_probability": 0.0005708065260316065,
+      "observed_fatal_rate": 0.0,
+      "abs_gap": 0.0005708065260316065
+    },
+    {
+      "bin": "(0.006, 0.0139]",
+      "count": 1,
+      "mean_predicted_probability": 0.01006914802660885,
+      "observed_fatal_rate": 0.0,
+      "abs_gap": 0.01006914802660885
+    },
+    {
+      "bin": "(0.0139, 0.0236]",
+      "count": 1,
+      "mean_predicted_probability": 0.019078244883930316,
+      "observed_fatal_rate": 0.0,
+      "abs_gap": 0.019078244883930316
+    },
+    {
+      "bin": "(0.0236, 0.146]",
+      "count": 1,
+      "mean_predicted_probability": 0.034754433144869465,
+      "observed_fatal_rate": 0.0,
+      "abs_gap": 0.034754433144869465
+    },
+    {
+      "bin": "(0.146, 0.814]",
+      "count": 1,
+      "mean_predicted_probability": 0.814262788155407,
+      "observed_fatal_rate": 1.0,
+      "abs_gap": 0.18573721184459302
+    }
+  ]
+}

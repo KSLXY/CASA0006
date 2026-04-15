@@ -53,7 +53,11 @@
         1
       ]
     ],
-    "model_name": "logistic_regression"
+    "model_name": "logistic_regression",
+    "best_params": {
+      "model__C": 3.0
+    },
+    "cv_best_f1_macro": 0.8882539682539683
   },
   "all_model_metrics": [
     {
@@ -109,7 +113,11 @@
           1
         ]
       ],
-      "model_name": "logistic_regression"
+      "model_name": "logistic_regression",
+      "best_params": {
+        "model__C": 3.0
+      },
+      "cv_best_f1_macro": 0.8882539682539683
     },
     {
       "accuracy": 1.0,
@@ -164,7 +172,13 @@
           1
         ]
       ],
-      "model_name": "random_forest"
+      "model_name": "random_forest",
+      "best_params": {
+        "model__max_depth": null,
+        "model__min_samples_leaf": 1,
+        "model__n_estimators": 200
+      },
+      "cv_best_f1_macro": 0.8882539682539683
     },
     {
       "accuracy": 0.42857142857142855,
@@ -219,7 +233,13 @@
           0
         ]
       ],
-      "model_name": "hist_gradient_boosting"
+      "model_name": "hist_gradient_boosting",
+      "best_params": {
+        "model__learning_rate": 0.05,
+        "model__max_depth": null,
+        "model__max_iter": 150
+      },
+      "cv_best_f1_macro": 0.17619047619047618
     }
   ],
   "rows_total": 36,
@@ -267,19 +287,36 @@
     "precipitation_peak_interaction",
     "low_visibility_proxy"
   ],
-  "performance_note": "sample demo performance",
+  "performance_note": "baseline performance on current processed dataset",
+  "dataset_used": "/Users/linxinyi/casa_revise/casa0006/data/sample/merged_sample.csv",
   "model_compare_csv": "/Users/linxinyi/casa_revise/casa0006/artifacts/model_compare.csv",
   "metrics_cv_json": "/Users/linxinyi/casa_revise/casa0006/artifacts/metrics_cv.json",
   "error_cases_csv": "/Users/linxinyi/casa_revise/casa0006/artifacts/error_cases.csv",
+  "data_quality_report_json": "/Users/linxinyi/casa_revise/casa0006/artifacts/data_quality_report.json",
+  "leakage_check_report_json": "/Users/linxinyi/casa_revise/casa0006/artifacts/leakage_check_report.json",
+  "threshold_report_csv": "/Users/linxinyi/casa_revise/casa0006/artifacts/threshold_report.csv",
+  "calibration_report_json": "/Users/linxinyi/casa_revise/casa0006/artifacts/calibration_report.json",
+  "hyperparameter_search_json": "/Users/linxinyi/casa_revise/casa0006/artifacts/hyperparameter_search.json",
   "report_figures": {
     "model_comparison": "/Users/linxinyi/casa_revise/casa0006/reports/figures/model_comparison.png",
     "confusion_matrix": "/Users/linxinyi/casa_revise/casa0006/reports/figures/confusion_matrix.png",
     "feature_importance": "/Users/linxinyi/casa_revise/casa0006/reports/figures/feature_importance.png"
   },
+  "class_distribution": {
+    "1": 14,
+    "2": 15,
+    "3": 6
+  },
+  "fatal_metrics_on_test_split": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "support": 1
+  },
   "error_analysis_observations": [
-    "No error cases on the current sample split; this likely reflects small sample size rather than perfect generalization.",
-    "Class distribution in the sample is limited, so metrics can look optimistic.",
-    "Cross-validation and larger data are required before any policy-level interpretation."
+    "No error cases on this split, likely due to limited sample coverage.",
+    "Current metrics should be treated as baseline evidence rather than final performance.",
+    "Larger data and stricter time-based evaluation are required before strong claims."
   ],
   "error_case_count": 0,
   "fatal_recall_on_test_split": 1.0

@@ -1,0 +1,41 @@
+{
+  "dataset_used": "/Users/linxinyi/casa_revise/casa0006/data/sample/merged_sample.csv",
+  "rows_raw": 36,
+  "rows_valid_target": 35,
+  "rows_invalid_target": 1,
+  "target_distribution_after_filter": {
+    "1": 14,
+    "2": 15,
+    "3": 6
+  },
+  "missing_rate_by_feature": {
+    "number_of_vehicles": 0.0,
+    "number_of_casualties": 0.0,
+    "hour": 0.0,
+    "day_of_week": 0.0,
+    "month": 0.0,
+    "is_weekend": 0.0,
+    "season": 0.0,
+    "cloud_cover": 0.0,
+    "sunshine": 0.0,
+    "global_radiation": 0.0,
+    "max_temp": 0.0,
+    "mean_temp": 0.0,
+    "min_temp": 0.0,
+    "precipitation": 0.0,
+    "pressure": 0.0,
+    "snow": 0.0,
+    "hour_peak": 0.0,
+    "precipitation_peak_interaction": 0.0,
+    "low_visibility_proxy": 0.0
+  },
+  "date_coverage": {
+    "min": "2019-01-03",
+    "max": "2020-05-22",
+    "unique_days": 36
+  },
+  "spatial_coverage": {
+    "unique_spatial_keys": 1,
+    "unknown_spatial_key_ratio": 1.0
+  }
+}

@@ -12,15 +12,28 @@ class PreparedDataset:
     X: pd.DataFrame
     y: pd.Series
     dates: pd.Series
+    spatial_keys: pd.Series
     removed_invalid_target: int
     missing_rate_by_feature: dict[str, float]
 
 
-def load_dataset(csv_path: str | Path) -> pd.DataFrame:
-    csv_path = Path(csv_path).expanduser().resolve()
-    if not csv_path.exists():
-        raise FileNotFoundError(f"Dataset not found: {csv_path}")
-    return pd.read_csv(csv_path)
+def load_dataset(data_path: str | Path, fallback_path: str | Path | None = None) -> pd.DataFrame:
+    data_path = Path(data_path).expanduser().resolve()
+    chosen = data_path
+    if not chosen.exists():
+        if fallback_path is None:
+            raise FileNotFoundError(f"Dataset not found: {chosen}")
+        fallback = Path(fallback_path).expanduser().resolve()
+        if not fallback.exists():
+            raise FileNotFoundError(f"Dataset not found: {chosen}; fallback not found: {fallback}")
+        chosen = fallback
+
+    suffix = chosen.suffix.lower()
+    if suffix == ".parquet":
+        return pd.read_parquet(chosen)
+    if suffix in {".csv", ".txt"}:
+        return pd.read_csv(chosen)
+    raise ValueError(f"Unsupported dataset format: {chosen}")
 
 
 def _ensure_snow_feature(df: pd.DataFrame) -> pd.DataFrame:
@@ -117,6 +130,7 @@ def prepare_dataset(
     removed_invalid_target = int(len(work) - len(valid))
 
     dates = pd.to_datetime(valid.get("date", pd.NaT), errors="coerce")
+    spatial_keys = valid.get("spatial_key", pd.Series(["unknown"] * len(valid), index=valid.index)).astype(str)
     X = valid[feature_columns].apply(pd.to_numeric, errors="coerce")
     missing_rate_by_feature = X.isna().mean().fillna(0).to_dict()
     X = X.replace([np.inf, -np.inf], np.nan)
@@ -130,6 +144,7 @@ def prepare_dataset(
         X=X,
         y=y,
         dates=dates,
+        spatial_keys=spatial_keys,
         removed_invalid_target=removed_invalid_target,
         missing_rate_by_feature=missing_rate_by_feature,
     )

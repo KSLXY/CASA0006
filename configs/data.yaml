@@ -8,6 +8,8 @@ paths:
   interim_dir: data/interim
   processed_dir: data/processed
   collision_file: data/raw/dft_collision.csv
+  vehicle_file: data/raw/dft_vehicle.csv
+  casualty_file: data/raw/dft_casualty.csv
   weather_file: data/raw/london_weather.csv
   bank_holidays_file: data/raw/uk_bank_holidays.json
   processed_master: data/processed/processed_master.parquet
@@ -15,6 +17,7 @@ paths:
 
 sources:
   dft_collision_url: "https://data.dft.gov.uk/road-accidents-safety-data/dft-road-casualty-statistics-collision-1979-latest-published-year.csv"
+  dft_vehicle_url: "https://data.dft.gov.uk/road-accidents-safety-data/dft-road-casualty-statistics-vehicle-1979-latest-published-year.csv"
+  dft_casualty_url: "https://data.dft.gov.uk/road-accidents-safety-data/dft-road-casualty-statistics-casualty-1979-latest-published-year.csv"
   kaggle_weather_dataset: "emmanuelfwerr/london-weather-data"
   gov_bank_holidays_url: "https://www.gov.uk/bank-holidays.json"
-

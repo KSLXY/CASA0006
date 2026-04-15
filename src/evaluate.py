@@ -26,7 +26,7 @@ def main() -> None:
     pipeline = payload["pipeline"]
     feature_columns = payload["feature_columns"]
 
-    df = load_dataset(settings.paths.sample_data)
+    df = load_dataset(settings.paths.sample_data, settings.paths.sample_data_fallback)
     prepared = prepare_dataset(
         df=df,
         feature_columns=feature_columns,
@@ -52,4 +52,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
