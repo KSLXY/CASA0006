@@ -76,6 +76,124 @@ def _safe_image(path: Path, caption: str):
         st.image(str(path), caption=caption, use_container_width=True)
 
 
+def _render_module_explainer(section_key: str, t):
+    explainers = {
+        "overview": t(
+            """
+            **How to read this module**
+            1. We define the safety problem first (severity classification, not simple accident counting).
+            2. We show why data governance is necessary before modeling.
+            3. We frame model output as risk-support evidence rather than automatic decision.
+            """,
+            """
+            **本模块怎么看**
+            1. 先定义问题：这是“严重度分类”，不是简单事故数量统计。
+            2. 先做数据治理再建模，避免脏标签直接污染结果。
+            3. 输出定位为风险辅助证据，不是自动执法决策。
+            """,
+        ),
+        "data": t(
+            """
+            **How to read this module**
+            1. Inspect raw fields and identify available explanatory signals.
+            2. Check whether key fields (date/time/severity) are present and usable.
+            3. Treat this table as the input boundary for feature engineering.
+            """,
+            """
+            **本模块怎么看**
+            1. 先确认原始字段是否能解释事故严重度。
+            2. 检查 date/time/severity 等关键字段是否完整可用。
+            3. 把本页视为后续特征工程的输入边界。
+            """,
+        ),
+        "quality": t(
+            """
+            **How to read this module**
+            1. Invalid target removal quantifies label risk control.
+            2. Missing-rate table shows where imputation may introduce uncertainty.
+            3. High-quality modeling starts from explicit data quality evidence.
+            """,
+            """
+            **本模块怎么看**
+            1. 异常标签剔除数量用于量化标签治理效果。
+            2. 缺失率表反映插补可能带来的不确定性来源。
+            3. 模型可信度首先来自数据质量证据。
+            """,
+        ),
+        "performance": t(
+            """
+            **How to read this module**
+            1. Accuracy gives overall correctness; Macro F1 protects minority classes.
+            2. Compare all candidate models before selecting one.
+            3. Confusion matrix and feature influence explain *why* model behaves this way.
+            """,
+            """
+            **本模块怎么看**
+            1. Accuracy 看整体，Macro F1 保护少数类（尤其 fatal）。
+            2. 先比较候选模型，再做选择，不拍脑袋定模型。
+            3. 通过混淆矩阵和特征影响解释“模型为什么这样预测”。
+            """,
+        ),
+        "reliability": t(
+            """
+            **How to read this module**
+            1. K-fold mean/std reflects result stability.
+            2. Time-based holdout simulates future deployment behavior.
+            3. Fatal recall is a safety-sensitive risk metric to monitor separately.
+            """,
+            """
+            **本模块怎么看**
+            1. K折的均值和方差用于评估结果稳定性。
+            2. 时间外推切分模拟真实上线后的时间漂移风险。
+            3. Fatal 召回率是安全场景的关键风险指标，需要单独看。
+            """,
+        ),
+        "error": t(
+            """
+            **How to read this module**
+            1. Error cases locate where model fails, not where it succeeds.
+            2. Analyze feature patterns around misclassification.
+            3. Convert findings into next-step feature or data collection actions.
+            """,
+            """
+            **本模块怎么看**
+            1. 误差分析关注“模型错在哪里”，而不只是对在哪里。
+            2. 观察误判样本周边的特征模式。
+            3. 把误差结论转化为下一步数据补全与特征改进动作。
+            """,
+        ),
+        "predict": t(
+            """
+            **How to read this module**
+            1. This is a scenario simulator, not a production decision engine.
+            2. Modify features to test sensitivity (rain/peak-hour/vehicles).
+            3. Use probability distribution, not only top-1 class, for interpretation.
+            """,
+            """
+            **本模块怎么看**
+            1. 这里是场景模拟器，不是生产级自动决策引擎。
+            2. 可调雨量、高峰时段、车辆数观察模型敏感性。
+            3. 解释时看概率分布，不只看第一名类别。
+            """,
+        ),
+        "limits": t(
+            """
+            **How to read this module**
+            1. We explicitly separate demo evidence from policy-level conclusions.
+            2. Known limitations are documented to prevent over-claiming.
+            3. Next-step items are concrete and execution-oriented.
+            """,
+            """
+            **本模块怎么看**
+            1. 明确区分“演示证据”与“政策级结论”。
+            2. 主动写出局限，防止过度宣称。
+            3. 下一步必须是可执行任务，而不是泛泛而谈。
+            """,
+        ),
+    }
+    st.info(explainers.get(section_key, ""))
+
+
 def main() -> None:
     def t(en: str, zh: str) -> str:
         return zh if lang == "中文" else en
@@ -136,6 +254,7 @@ def main() -> None:
 
     with tabs[0]:
         st.subheader(t("Problem Story", "项目主线"))
+        _render_module_explainer("overview", t)
         st.markdown(
             t(
                 """
@@ -162,6 +281,7 @@ def main() -> None:
 
     with tabs[1]:
         st.subheader(t("Sample Dataset Preview", "样本数据预览"))
+        _render_module_explainer("data", t)
         if sample_df.empty:
             st.warning(t("Sample data not found.", "未找到样本数据。"))
         else:
@@ -184,6 +304,7 @@ def main() -> None:
 
     with tabs[2]:
         st.subheader(t("Data Quality", "数据质量"))
+        _render_module_explainer("quality", t)
         if metrics is None:
             st.info(t("No metrics file found. Run training first.", "未找到指标文件，请先运行训练。"))
         else:
@@ -209,6 +330,7 @@ def main() -> None:
 
     with tabs[3]:
         st.subheader(t("Model Comparison & Evidence", "模型对比与证据"))
+        _render_module_explainer("performance", t)
         if metrics is None:
             st.info(t("No metrics file found. Run training first.", "未找到指标文件，请先运行训练。"))
         else:
@@ -239,6 +361,7 @@ def main() -> None:
 
     with tabs[4]:
         st.subheader(t("Reliability Checks", "可靠性检验"))
+        _render_module_explainer("reliability", t)
         if metrics_cv is None:
             st.info(t("No reliability artifact found. Run training first.", "未找到可靠性结果，请先运行训练。"))
         else:
@@ -258,6 +381,7 @@ def main() -> None:
 
     with tabs[5]:
         st.subheader(t("Error Analysis", "误差分析"))
+        _render_module_explainer("error", t)
         if error_cases_df.empty:
             st.warning(
                 t(
@@ -289,6 +413,7 @@ def main() -> None:
 
     with tabs[6]:
         st.subheader(t("Single Prediction", "单条预测"))
+        _render_module_explainer("predict", t)
         if payload is None:
             st.info(t("No trained model found. Run `python -m src.train --config configs/default.yaml` first.", "未找到训练模型，请先运行训练命令。"))
         else:
@@ -318,6 +443,7 @@ def main() -> None:
 
     with tabs[7]:
         st.subheader(t("Limitations", "局限"))
+        _render_module_explainer("limits", t)
         st.markdown(
             t(
                 """
