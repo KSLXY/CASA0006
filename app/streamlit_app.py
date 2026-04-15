@@ -56,6 +56,20 @@ def load_sample_data():
 
 
 @st.cache_data
+def load_preview_data(dataset_used: str | None):
+    if not dataset_used:
+        return pd.DataFrame(), "N/A"
+    path = Path(dataset_used)
+    if not path.exists():
+        return pd.DataFrame(), str(path)
+    if path.suffix.lower() == ".parquet":
+        df = pd.read_parquet(path)
+    else:
+        df = pd.read_csv(path, low_memory=False)
+    return df, str(path)
+
+
+@st.cache_data
 def load_model_comparison():
     if MODEL_COMPARE_PATH.exists():
         return pd.read_csv(MODEL_COMPARE_PATH)
@@ -88,6 +102,44 @@ def load_threshold_report():
     if THRESHOLD_REPORT_PATH.exists():
         return pd.read_csv(THRESHOLD_REPORT_PATH)
     return pd.DataFrame()
+
+
+FEATURE_LABELS_ZH = {
+    "number_of_vehicles": "车辆数量",
+    "number_of_casualties": "伤亡人数",
+    "hour": "小时",
+    "day_of_week": "星期几",
+    "month": "月份",
+    "is_weekend": "是否周末",
+    "season": "季节编码",
+    "cloud_cover": "云量",
+    "sunshine": "日照时长",
+    "global_radiation": "总辐射",
+    "max_temp": "最高温",
+    "mean_temp": "平均温",
+    "min_temp": "最低温",
+    "precipitation": "降水量",
+    "pressure": "气压",
+    "snow": "是否降雪",
+    "hour_peak": "高峰时段标记",
+    "precipitation_peak_interaction": "降水与高峰交互项",
+    "low_visibility_proxy": "低能见度代理变量",
+}
+
+
+def _translate_observation_to_zh(text: str) -> str:
+    mapping = [
+        ("No error cases on this split", "本次切分下未出现误差样本"),
+        ("Current metrics should be treated as baseline evidence rather than final performance", "当前指标应视为基线证据，不应视为最终上限"),
+        ("Larger data and stricter time-based evaluation are required before strong claims", "在进行较强结论前，仍需更大样本和更严格的时间外推验证"),
+        ("Error cases are concentrated in", "误差样本集中在"),
+        ("Most variable features among errors are", "误差样本中波动较大的特征包括"),
+        ("Fatal vs serious boundary remains the highest-risk confusion zone", "Fatal 与 Serious 的边界仍是高风险混淆区域"),
+    ]
+    for en, zh in mapping:
+        if text.startswith(en):
+            return text.replace(en, zh)
+    return text
 
 
 def _safe_image(path: Path, caption: str):
@@ -342,7 +394,6 @@ def main() -> None:
     payload, model_load_error = load_model_payload()
     metrics = load_metrics()
     metrics_cv = load_metrics_cv()
-    sample_df = load_sample_data()
     model_compare_df = load_model_comparison()
     error_cases_df = load_error_cases()
     feature_importance_df = load_feature_importance()
@@ -351,6 +402,8 @@ def main() -> None:
     calibration_report = load_json_if_exists(CALIBRATION_REPORT_PATH)
     search_report = load_json_if_exists(SEARCH_REPORT_PATH)
     threshold_df = load_threshold_report()
+    dataset_used = metrics.get("dataset_used") if metrics else None
+    preview_df, preview_path = load_preview_data(dataset_used)
 
     if model_load_error:
         st.error(
@@ -395,12 +448,16 @@ def main() -> None:
                 - **Data challenge** Real-world labels include invalid values such as `-10`, so cleaning decisions matter.
                 - **Modeling decision** Baseline and tree models are compared, and **Macro F1** is used to preserve minority class visibility.
                 - **Deployment outcome** The demo is online and reproducible with GitHub and Streamlit.
+                - **Current dataset status** The latest run is based on an integrated 5-year DfT table with weather and holiday enrichment.
+                - **Evidence chain** Data governance files, reliability reports, threshold analysis, and calibration diagnostics are linked in each module.
                 """,
                 """
                 - **城市问题** 交通事故严重度是公共安全的重要信号。
                 - **数据挑战** 原始标签中存在异常值，例如 `-10`，因此必须先清洗再建模。
                 - **建模决策** 采用多模型比较，并以 **Macro F1** 作为关键指标，避免少数类被忽视。
                 - **交付结果** 项目可通过 GitHub 与 Streamlit 在线复现和展示。
+                - **数据状态** 最新运行基于 DfT 近五年整合主表，并补充天气与节假日信息。
+                - **证据链条** 数据治理、可靠性、阈值与校准报告都已在对应模块挂载。
                 """,
             )
         )
@@ -413,11 +470,11 @@ def main() -> None:
             )
 
     with tabs[1]:
-        st.subheader(t("Sample Dataset Preview", "样本数据预览"))
+        st.subheader(t("Dataset Preview", "数据预览"))
         _render_module_explainer("data", t)
         _render_story_transition("data", t)
-        if sample_df.empty:
-            st.warning(t("Sample data not found.", "未找到样本数据。"))
+        if preview_df.empty:
+            st.warning(t("Dataset preview not available.", "当前数据预览不可用。"))
         else:
             st.markdown(
                 t(
@@ -425,19 +482,40 @@ def main() -> None:
                     "**步骤证据** 此预览用于特征工程前的结构与测量合理性校验。",
                 )
             )
-            st.dataframe(sample_df.head(20), use_container_width=True)
-            st.write(t(f"Rows {len(sample_df)}", f"样本行数 {len(sample_df)}"))
+            st.dataframe(preview_df.head(20), use_container_width=True)
+            st.write(t(f"Rows {len(preview_df)}", f"数据行数 {len(preview_df)}"))
+            st.caption(t(f"Preview source {preview_path}", f"预览来源 {preview_path}"))
         st.markdown(
             t(
                 """
                 **Data sources**
-                - London weather data (Kaggle public dataset)
-                - UK DfT road collision records
+                - UK DfT road safety open data, validated 2020 to 2024 collisions vehicles casualties, Great Britain coverage.
+                - London weather data from Kaggle public dataset, daily meteorological variables for London.
+                - UK bank holidays from GOV.UK JSON API, England and Wales calendar events.
+                - Core analytical focus remains London, with temporal coverage 2020-01-01 to 2024-12-31 in current processed table.
                 """,
                 """
                 **数据来源**
-                - 伦敦天气（Kaggle 公开数据）
-                - 英国 DfT 道路碰撞数据
+                - 英国 DfT 道路安全公开数据，使用 2020 至 2024 年已验证的碰撞、车辆、伤亡三表，空间范围为大不列颠。
+                - 伦敦天气数据来自 Kaggle 公开数据集，粒度为按日气象变量。
+                - 英国法定节假日来自 GOV.UK JSON 接口，使用 England and Wales 事件日历。
+                - 当前主表分析重点保持伦敦方向，时间覆盖为 2020-01-01 至 2024-12-31。
+                """,
+            )
+        )
+        st.markdown(
+            t(
+                """
+                **Repository availability note**
+                - Some raw and processed files are intentionally not uploaded to GitHub.
+                - Main reasons are GitHub file-size limits and repository portability.
+                - Local-only files include `data/raw/*.csv`, `data/processed/*.parquet`, and oversized model binaries generated from full-data training.
+                """,
+                """
+                **仓库可见性说明**
+                - 部分原始数据与处理后数据不会上传到 GitHub 公共仓库。
+                - 主要原因是 GitHub 文件大小限制，以及仓库可移植性要求。
+                - 本地保留文件包括 `data/raw/*.csv`、`data/processed/*.parquet`，以及全量训练产生的超大模型二进制文件。
                 """,
             )
         )
@@ -593,7 +671,10 @@ def main() -> None:
             if observations:
                 st.markdown(t("Key observations", "关键观察"))
                 for item in observations:
-                    st.write(f"- {item}")
+                    if lang == "中文":
+                        st.write(f"- {_translate_observation_to_zh(item)}")
+                    else:
+                        st.write(f"- {item}")
 
     with tabs[6]:
         st.subheader(t("Single Prediction", "单条预测"))
@@ -608,7 +689,14 @@ def main() -> None:
             inputs = {}
             for col in feature_columns:
                 default = float(defaults.get(col, 0.0))
-                inputs[col] = st.number_input(col, value=default, format="%.4f")
+                if lang == "中文":
+                    c1, c2 = st.columns([2, 3])
+                    with c1:
+                        inputs[col] = st.number_input(col, value=default, format="%.4f")
+                    with c2:
+                        st.caption(FEATURE_LABELS_ZH.get(col, "特征说明待补充"))
+                else:
+                    inputs[col] = st.number_input(col, value=default, format="%.4f")
 
             if st.button(t("Predict severity", "预测严重度")):
                 X = pd.DataFrame([inputs], columns=feature_columns)
@@ -629,18 +717,39 @@ def main() -> None:
     with tabs[7]:
         st.subheader(t("Limitations", "局限"))
         _render_module_explainer("limits", t)
+        is_full_data = rows_total > 100000
         st.markdown(
             t(
-                """
-                - The current metrics are based on a **small sample demo dataset**.
-                - Temporal and spatial features are still limited.
-                - External enrichment data (OSM/air-quality/IMD) is not fully connected yet.
-                """,
-                """
-                - 当前指标来自**小样本演示数据**，可能偏乐观。
-                - 时空特征仍然有限。
-                - 外部补充数据（OSM/空气质量/IMD）尚未完全打通。
-                """,
+                (
+                    """
+                    - Current metrics are based on the latest integrated full-data run, while feature coverage still has structural gaps.
+                    - Temporal and spatial features are improving but remain limited for location-specific inference.
+                    - External enrichments such as OSM air-quality and IMD are partially prepared and not fully integrated yet.
+                    - Some large artifacts are kept local and excluded from GitHub due storage limits.
+                    """
+                    if is_full_data
+                    else """
+                    - The current metrics are based on a sample demo dataset.
+                    - Temporal and spatial features are still limited.
+                    - External enrichment data (OSM air-quality IMD) is not fully connected yet.
+                    - Some large local artifacts are excluded from GitHub due storage limits.
+                    """
+                ),
+                (
+                    """
+                    - 当前指标来自最新全量整合运行，但特征覆盖仍存在结构性缺口。
+                    - 时空特征较此前更完整，但对精细位置推断仍有局限。
+                    - OSM 空气质量 IMD 等外部补充数据已部分准备，尚未完全接入。
+                    - 部分大体量产物因仓库存储限制仅保留在本地环境。
+                    """
+                    if is_full_data
+                    else """
+                    - 当前指标来自样本演示数据。
+                    - 时空特征仍然有限。
+                    - 外部补充数据（OSM 空气质量 IMD）尚未完全打通。
+                    - 部分大体量产物因仓库存储限制仅保留在本地环境。
+                    """
+                ),
             )
         )
         if leakage_report:
