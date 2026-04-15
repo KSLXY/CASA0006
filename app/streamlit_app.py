@@ -16,6 +16,11 @@ SAMPLE_PATH = ROOT_DIR / "data" / "sample" / "merged_sample.csv"
 MODEL_COMPARE_PATH = ROOT_DIR / "artifacts" / "model_compare.csv"
 ERROR_CASES_PATH = ROOT_DIR / "artifacts" / "error_cases.csv"
 FEATURE_IMPORTANCE_PATH = ROOT_DIR / "artifacts" / "feature_importance.csv"
+DATA_QUALITY_REPORT_PATH = ROOT_DIR / "artifacts" / "data_quality_report.json"
+LEAKAGE_REPORT_PATH = ROOT_DIR / "artifacts" / "leakage_check_report.json"
+THRESHOLD_REPORT_PATH = ROOT_DIR / "artifacts" / "threshold_report.csv"
+CALIBRATION_REPORT_PATH = ROOT_DIR / "artifacts" / "calibration_report.json"
+SEARCH_REPORT_PATH = ROOT_DIR / "artifacts" / "hyperparameter_search.json"
 FIGURES_DIR = ROOT_DIR / "reports" / "figures"
 
 
@@ -68,6 +73,20 @@ def load_error_cases():
 def load_feature_importance():
     if FEATURE_IMPORTANCE_PATH.exists():
         return pd.read_csv(FEATURE_IMPORTANCE_PATH)
+    return pd.DataFrame()
+
+
+@st.cache_data
+def load_json_if_exists(path: Path):
+    if path.exists():
+        return json.loads(path.read_text(encoding="utf-8"))
+    return None
+
+
+@st.cache_data
+def load_threshold_report():
+    if THRESHOLD_REPORT_PATH.exists():
+        return pd.read_csv(THRESHOLD_REPORT_PATH)
     return pd.DataFrame()
 
 
@@ -327,6 +346,11 @@ def main() -> None:
     model_compare_df = load_model_comparison()
     error_cases_df = load_error_cases()
     feature_importance_df = load_feature_importance()
+    data_quality_report = load_json_if_exists(DATA_QUALITY_REPORT_PATH)
+    leakage_report = load_json_if_exists(LEAKAGE_REPORT_PATH)
+    calibration_report = load_json_if_exists(CALIBRATION_REPORT_PATH)
+    search_report = load_json_if_exists(SEARCH_REPORT_PATH)
+    threshold_df = load_threshold_report()
 
     if model_load_error:
         st.error(
@@ -450,6 +474,9 @@ def main() -> None:
                 )
             else:
                 st.write(t("Missing-rate details unavailable.", "缺失率明细不可用。"))
+            if data_quality_report:
+                st.markdown(t("Data quality evidence file", "数据质量证据文件"))
+                st.json(data_quality_report)
 
     with tabs[3]:
         st.subheader(t("Model Comparison & Evidence", "模型对比与证据"))
@@ -486,6 +513,9 @@ def main() -> None:
             if not feature_importance_df.empty:
                 st.markdown(t("Top feature influence table", "特征影响Top表"))
                 st.dataframe(feature_importance_df.head(10), use_container_width=True)
+            if search_report:
+                st.markdown(t("Hyperparameter search summary", "超参数搜索摘要"))
+                st.json(search_report)
 
     with tabs[4]:
         st.subheader(t("Reliability Checks", "可靠性检验"))
@@ -519,6 +549,12 @@ def main() -> None:
                 st.warning(time_holdout.get("reason", t("Time holdout unavailable.", "时间外推不可用。")))
             if metrics:
                 st.metric(t("Fatal recall (test split)", "Fatal召回率（测试集）"), f"{metrics.get('fatal_recall_on_test_split', 0):.3f}")
+            if not threshold_df.empty:
+                st.markdown(t("Fatal threshold sensitivity", "Fatal阈值敏感性"))
+                st.dataframe(threshold_df, use_container_width=True)
+            if calibration_report:
+                st.markdown(t("Calibration report", "校准报告"))
+                st.json(calibration_report)
 
     with tabs[5]:
         st.subheader(t("Error Analysis", "误差分析"))
@@ -607,6 +643,9 @@ def main() -> None:
                 """,
             )
         )
+        if leakage_report:
+            st.subheader(t("Leakage Check", "泄漏检查"))
+            st.json(leakage_report)
         st.subheader(t("Next Step", "下一步"))
         st.markdown(
             t(

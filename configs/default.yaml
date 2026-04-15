@@ -1,14 +1,21 @@
 paths:
-  sample_data: data/sample/merged_sample.csv
+  sample_data: data/processed/processed_master.parquet
+  sample_data_fallback: data/sample/merged_sample.csv
   model_artifact: artifacts/model.joblib
   metrics_artifact: artifacts/metrics.json
   evaluation_artifact: artifacts/evaluation.json
+  data_quality_artifact: artifacts/data_quality_report.json
+  leakage_check_artifact: artifacts/leakage_check_report.json
+  threshold_artifact: artifacts/threshold_report.csv
+  calibration_artifact: artifacts/calibration_report.json
+  search_artifact: artifacts/hyperparameter_search.json
 
 train:
   random_seed: 42
   test_size: 0.2
   target_column: accident_severity
   model_selection_metric: f1_macro
+  enable_hyperparameter_search: true
   feature_columns:
     - number_of_vehicles
     - number_of_casualties

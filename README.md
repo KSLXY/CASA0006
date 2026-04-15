@@ -64,8 +64,10 @@ flowchart LR
   - Random Forest (nonlinear, robust)
   - HistGradientBoosting (strong tabular baseline)
 
-## 6) Results (Sample Demo Performance)
-This repository intentionally provides **sample demo performance** (small dataset for reproducibility).
+## 6) Results (Baseline Evidence First)
+This repository now prioritizes **credible baseline evidence** over headline score.
+If `data/processed/processed_master.parquet` is available, training uses it by default.
+If not available, training falls back to the sample file for demo continuity.
 
 Generated artifacts:
 - `artifacts/metrics.json`
@@ -73,6 +75,11 @@ Generated artifacts:
 - `artifacts/model_compare.csv`
 - `artifacts/error_cases.csv`
 - `artifacts/feature_importance.csv`
+- `artifacts/data_quality_report.json`
+- `artifacts/leakage_check_report.json`
+- `artifacts/threshold_report.csv`
+- `artifacts/calibration_report.json`
+- `artifacts/hyperparameter_search.json`
 - `reports/figures/model_comparison.png`
 - `reports/figures/confusion_matrix.png`
 - `reports/figures/feature_importance.png`
@@ -81,7 +88,9 @@ Interpretation emphasis:
 - show model ranking by Accuracy + Macro F1,
 - inspect confusion matrix (especially serious vs fatal boundary),
 - review error cases and summarize observations,
-- report reliability via stratified K-fold + time-based holdout.
+- report reliability via stratified K-fold + time-based holdout,
+- check leakage risk checklist and class imbalance (fatal precision/recall/F1),
+- inspect threshold sensitivity and probability calibration for fatal class.
 
 ## 7) Limitations & Next Step
 Current limitations:
@@ -119,6 +128,11 @@ streamlit run app/streamlit_app.py
 - Fetch data: `python scripts/fetch_datasets.py --config configs/data.yaml --from 2015-01-01 --to 2024-12-31`
 - Build master: `python scripts/build_master_table.py --config configs/data.yaml`
 - App entry: `app/streamlit_app.py`
+- New evidence artifacts:
+  - `artifacts/data_quality_report.json`
+  - `artifacts/leakage_check_report.json`
+  - `artifacts/threshold_report.csv`
+  - `artifacts/calibration_report.json`
 
 ---
 
@@ -162,14 +176,20 @@ python scripts/build_master_table.py --config configs/data.yaml
 - 模型对比：Logistic Regression / Random Forest / HistGradientBoosting。
 - 可靠性验证：Stratified K-Fold + 时间外推切分（time-based holdout）。
 
-## 6) 结果与产物（Sample Demo Performance）
-当前仓库默认是演示样本结果（用于可复现，不代表最终泛化上限）。  
+## 6) 结果与产物（先可信，再提分）
+当前仓库默认优先产出可信基线证据。若存在 `data/processed/processed_master.parquet`，训练默认使用主表。  
+若主表暂未构建，则自动回退到样本文件，保证演示流程可运行。  
 核心产物包括：
 - `artifacts/metrics.json`
 - `artifacts/metrics_cv.json`
 - `artifacts/model_compare.csv`
 - `artifacts/error_cases.csv`
 - `artifacts/feature_importance.csv`
+- `artifacts/data_quality_report.json`
+- `artifacts/leakage_check_report.json`
+- `artifacts/threshold_report.csv`
+- `artifacts/calibration_report.json`
+- `artifacts/hyperparameter_search.json`
 - `reports/figures/*.png`
 
 ## 7) 局限与下一步

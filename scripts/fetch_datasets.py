@@ -46,6 +46,26 @@ def fetch_dft_collision(cfg: dict, from_date: str, to_date: str) -> Path:
     return output
 
 
+def fetch_dft_vehicle(cfg: dict) -> Path:
+    output = Path(cfg["paths"]["vehicle_file"]).resolve()
+    url = cfg["sources"]["dft_vehicle_url"]
+    print(f"Downloading DfT vehicle data from: {url}")
+    df = pd.read_csv(url, low_memory=False)
+    df.to_csv(output, index=False)
+    print(f"Saved DfT vehicle: {output} (rows={len(df)})")
+    return output
+
+
+def fetch_dft_casualty(cfg: dict) -> Path:
+    output = Path(cfg["paths"]["casualty_file"]).resolve()
+    url = cfg["sources"]["dft_casualty_url"]
+    print(f"Downloading DfT casualty data from: {url}")
+    df = pd.read_csv(url, low_memory=False)
+    df.to_csv(output, index=False)
+    print(f"Saved DfT casualty: {output} (rows={len(df)})")
+    return output
+
+
 def fetch_weather(cfg: dict, from_date: str, to_date: str) -> Path:
     output = Path(cfg["paths"]["weather_file"]).resolve()
     dataset_name = cfg["sources"]["kaggle_weather_dataset"]
@@ -100,6 +120,8 @@ def main() -> None:
 
     outputs: dict[str, str] = {}
     outputs["collision_file"] = str(fetch_dft_collision(cfg, from_date, to_date))
+    outputs["vehicle_file"] = str(fetch_dft_vehicle(cfg))
+    outputs["casualty_file"] = str(fetch_dft_casualty(cfg))
     outputs["weather_file"] = str(fetch_weather(cfg, from_date, to_date))
     outputs["bank_holidays_file"] = str(fetch_bank_holidays(cfg))
     write_fetch_metadata(cfg, from_date, to_date, outputs)
@@ -107,4 +129,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
