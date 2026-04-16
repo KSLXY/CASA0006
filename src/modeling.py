@@ -6,7 +6,7 @@ from typing import Any
 import numpy as np
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, f1_score
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, classification_report, confusion_matrix, f1_score
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -59,6 +59,7 @@ def evaluate_predictions(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, An
     cm = confusion_matrix(y_true, y_pred)
     return {
         "accuracy": float(accuracy_score(y_true, y_pred)),
+        "balanced_accuracy": float(balanced_accuracy_score(y_true, y_pred)),
         "f1_macro": float(f1_score(y_true, y_pred, average="macro")),
         "classification_report": report,
         "confusion_matrix": cm.tolist(),

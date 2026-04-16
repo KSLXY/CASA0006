@@ -112,6 +112,7 @@ def prepare_dataset(
     df: pd.DataFrame,
     feature_columns: list[str],
     target_column: str = "accident_severity",
+    severity_code_map: dict[int, int] | None = None,
 ) -> PreparedDataset:
     work = _ensure_snow_feature(df)
     work = enrich_temporal_features(work)
@@ -137,7 +138,12 @@ def prepare_dataset(
     medians = X.median(numeric_only=True)
     X = X.fillna(medians)
 
-    y = valid[target_column].astype(int) - 1
+    mapping = severity_code_map or {1: 0, 2: 1, 3: 2}
+    y = valid[target_column].astype(int).map(mapping)
+    if y.isna().any():
+        missing_codes = sorted(valid.loc[y.isna(), target_column].astype(int).unique().tolist())
+        raise ValueError(f"Target codes not covered by severity_code_map: {missing_codes}")
+    y = y.astype(int)
     y.name = "severity_class"
 
     return PreparedDataset(
@@ -148,3 +154,28 @@ def prepare_dataset(
         removed_invalid_target=removed_invalid_target,
         missing_rate_by_feature=missing_rate_by_feature,
     )
+
+
+def build_missingness_by_time(df: pd.DataFrame, features: list[str]) -> pd.DataFrame:
+    work = enrich_temporal_features(df.copy())
+    if "date" not in work.columns:
+        return pd.DataFrame(columns=["year_month", "feature", "missing_rate", "rows"])
+    work["date"] = pd.to_datetime(work["date"], errors="coerce")
+    work = work[work["date"].notna()].copy()
+    if work.empty:
+        return pd.DataFrame(columns=["year_month", "feature", "missing_rate", "rows"])
+    work["year_month"] = work["date"].dt.to_period("M").astype(str)
+    rows: list[dict[str, float | int | str]] = []
+    for ym, part in work.groupby("year_month"):
+        row_count = int(len(part))
+        for feature in features:
+            series = pd.to_numeric(part.get(feature), errors="coerce")
+            rows.append(
+                {
+                    "year_month": ym,
+                    "feature": feature,
+                    "missing_rate": float(series.isna().mean()),
+                    "rows": row_count,
+                }
+            )
+    return pd.DataFrame(rows)

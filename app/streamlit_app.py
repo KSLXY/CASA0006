@@ -21,6 +21,8 @@ LEAKAGE_REPORT_PATH = ROOT_DIR / "artifacts" / "leakage_check_report.json"
 THRESHOLD_REPORT_PATH = ROOT_DIR / "artifacts" / "threshold_report.csv"
 CALIBRATION_REPORT_PATH = ROOT_DIR / "artifacts" / "calibration_report.json"
 SEARCH_REPORT_PATH = ROOT_DIR / "artifacts" / "hyperparameter_search.json"
+ABLATION_PATH = ROOT_DIR / "artifacts" / "ablation_leakage.csv"
+MISSINGNESS_BY_TIME_PATH = ROOT_DIR / "artifacts" / "missingness_by_time.csv"
 FIGURES_DIR = ROOT_DIR / "reports" / "figures"
 
 
@@ -101,6 +103,20 @@ def load_json_if_exists(path: Path):
 def load_threshold_report():
     if THRESHOLD_REPORT_PATH.exists():
         return pd.read_csv(THRESHOLD_REPORT_PATH)
+    return pd.DataFrame()
+
+
+@st.cache_data
+def load_missingness_by_time():
+    if MISSINGNESS_BY_TIME_PATH.exists():
+        return pd.read_csv(MISSINGNESS_BY_TIME_PATH)
+    return pd.DataFrame()
+
+
+@st.cache_data
+def load_ablation():
+    if ABLATION_PATH.exists():
+        return pd.read_csv(ABLATION_PATH)
     return pd.DataFrame()
 
 
@@ -402,6 +418,8 @@ def main() -> None:
     calibration_report = load_json_if_exists(CALIBRATION_REPORT_PATH)
     search_report = load_json_if_exists(SEARCH_REPORT_PATH)
     threshold_df = load_threshold_report()
+    missingness_by_time_df = load_missingness_by_time()
+    ablation_df = load_ablation()
     dataset_used = metrics.get("dataset_used") if metrics else None
     preview_df, preview_path = load_preview_data(dataset_used)
 
@@ -467,6 +485,15 @@ def main() -> None:
                     f"Performance note: **{metrics.get('performance_note', 'sample demo performance')}**",
                     f"结果说明 **{metrics.get('performance_note', 'sample demo performance')}**",
                 )
+            )
+            st.subheader(t("Version & Evidence", "版本与证据"))
+            st.json(
+                {
+                    "data_version_tag": metrics.get("data_version_tag", "unknown"),
+                    "label_mapping_version": metrics.get("label_mapping_version", "unknown"),
+                    "feature_set_mode": metrics.get("feature_set_mode", "unknown"),
+                    "dataset_used": metrics.get("dataset_used", "unknown"),
+                }
             )
 
     with tabs[1]:
@@ -555,6 +582,9 @@ def main() -> None:
             if data_quality_report:
                 st.markdown(t("Data quality evidence file", "数据质量证据文件"))
                 st.json(data_quality_report)
+            if not missingness_by_time_df.empty:
+                st.markdown(t("Missingness by month", "按月缺失率"))
+                st.dataframe(missingness_by_time_df.head(120), use_container_width=True)
 
     with tabs[3]:
         st.subheader(t("Model Comparison & Evidence", "模型对比与证据"))
@@ -594,6 +624,9 @@ def main() -> None:
             if search_report:
                 st.markdown(t("Hyperparameter search summary", "超参数搜索摘要"))
                 st.json(search_report)
+            if not ablation_df.empty:
+                st.markdown(t("Leakage ablation result", "泄漏对照实验结果"))
+                st.dataframe(ablation_df, use_container_width=True)
 
     with tabs[4]:
         st.subheader(t("Reliability Checks", "可靠性检验"))
@@ -627,6 +660,18 @@ def main() -> None:
                 st.warning(time_holdout.get("reason", t("Time holdout unavailable.", "时间外推不可用。")))
             if metrics:
                 st.metric(t("Fatal recall (test split)", "Fatal召回率（测试集）"), f"{metrics.get('fatal_recall_on_test_split', 0):.3f}")
+                panel = metrics.get("overall_metrics_on_test_split", {})
+                if panel:
+                    st.markdown(t("Overall panel metrics", "综合面板指标"))
+                    st.json(panel)
+                safety = metrics.get("safety_metrics_on_test_split", {})
+                if safety:
+                    st.markdown(t("Safety panel metrics", "安全面板指标"))
+                    st.json(safety)
+                prob = metrics.get("probability_metrics_on_test_split", {})
+                if prob:
+                    st.markdown(t("Probability panel metrics", "概率面板指标"))
+                    st.json(prob)
             if not threshold_df.empty:
                 st.markdown(t("Fatal threshold sensitivity", "Fatal阈值敏感性"))
                 st.dataframe(threshold_df, use_container_width=True)

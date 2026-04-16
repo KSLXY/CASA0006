@@ -31,6 +31,7 @@ def main() -> None:
         df=df,
         feature_columns=feature_columns,
         target_column=payload.get("target_column", settings.train.target_column),
+        severity_code_map=payload.get("severity_code_map", settings.train.severity_code_map),
     )
 
     pred = pipeline.predict(prepared.X)

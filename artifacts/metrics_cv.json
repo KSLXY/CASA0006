@@ -1,53 +1,53 @@
 {
   "cv": {
     "class_labels": [
-      "Slight",
+      "Fatal",
       "Serious",
-      "Fatal"
+      "Slight"
     ],
     "rows": [
       {
-        "model_name": "random_forest",
-        "cv_splits": 5,
-        "accuracy_mean": 0.5691916666666667,
-        "accuracy_std": 0.0040351407795901385,
-        "f1_macro_mean": 0.33709891799629277,
-        "f1_macro_std": 0.0023695033907956318,
-        "fatal_recall_mean": 0.6537031984320323,
-        "fatal_recall_std": 0.006549572795669325
-      },
-      {
         "model_name": "logistic_regression",
         "cv_splits": 5,
-        "accuracy_mean": 0.4803333333333333,
-        "accuracy_std": 0.003099731171139417,
-        "f1_macro_mean": 0.3225874751203594,
-        "f1_macro_std": 0.002769312799373637,
-        "fatal_recall_mean": 0.5379883430248357,
-        "fatal_recall_std": 0.002935372574365444
+        "accuracy_mean": 0.7714285714285715,
+        "accuracy_std": 0.1456862718169367,
+        "f1_macro_mean": 0.7412698412698412,
+        "f1_macro_std": 0.19528325713307554,
+        "fatal_recall_mean": 0.7666666666666666,
+        "fatal_recall_std": 0.2
+      },
+      {
+        "model_name": "random_forest",
+        "cv_splits": 5,
+        "accuracy_mean": 0.6857142857142857,
+        "accuracy_std": 0.2457807219155036,
+        "f1_macro_mean": 0.646984126984127,
+        "f1_macro_std": 0.26716054039880766,
+        "fatal_recall_mean": 0.6333333333333333,
+        "fatal_recall_std": 0.30550504633038933
       },
       {
         "model_name": "hist_gradient_boosting",
         "cv_splits": 5,
-        "accuracy_mean": 0.7668333333333334,
-        "accuracy_std": 0.00014191155304941016,
-        "f1_macro_mean": 0.2934115737051812,
-        "f1_macro_std": 0.0012563726803156306,
-        "fatal_recall_mean": 0.9985761206267144,
-        "fatal_recall_std": 0.00017989912724761562
+        "accuracy_mean": 0.4,
+        "accuracy_std": 0.05714285714285714,
+        "f1_macro_mean": 0.18962962962962962,
+        "f1_macro_std": 0.020740740740740737,
+        "fatal_recall_mean": 0.2,
+        "fatal_recall_std": 0.4
       }
     ],
-    "selected_model_by_cv": "random_forest"
+    "selected_model_by_cv": "logistic_regression"
   },
   "time_holdout": {
     "available": true,
-    "split_date_start": "2024-01-02",
-    "train_rows": 402780,
-    "test_rows": 100695,
+    "split_date_start": "2020-02-09",
+    "train_rows": 28,
+    "test_rows": 7,
     "metrics": {
-      "accuracy": 0.5253885495804161,
-      "f1_macro": 0.335897173043409,
-      "fatal_recall": 0.5899871833833226
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "fatal_recall": 1.0
     }
   }
 }

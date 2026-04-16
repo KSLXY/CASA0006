@@ -6,9 +6,9 @@ This project upgrades `casa0006_individual_work.ipynb` into a portfolio-ready cl
 ## 1) Problem Background
 Road-collision severity is a practical safety signal for city management.  
 Instead of only counting accidents, this project predicts severity levels:
-- `1 = Slight`
+- `1 = Fatal`
 - `2 = Serious`
-- `3 = Fatal`
+- `3 = Slight`
 
 The objective is to turn coursework into a reproducible, explainable, and interview-ready ML workflow.
 
@@ -59,6 +59,7 @@ flowchart LR
 ### Why these decisions
 - Keep **3 severity classes**: preserves the public-safety granularity.
 - Use **Macro F1** for selection: gives each class equal importance, including minority fatal class.
+- Use **pre-event feature set** as default training mode: avoids post-event leakage in forward risk estimation.
 - Compare 3 models:
   - Logistic Regression (interpretable baseline)
   - Random Forest (nonlinear, robust)
@@ -80,6 +81,8 @@ Generated artifacts:
 - `artifacts/threshold_report.csv`
 - `artifacts/calibration_report.json`
 - `artifacts/hyperparameter_search.json`
+- `artifacts/ablation_leakage.csv`
+- `artifacts/missingness_by_time.csv`
 - `reports/figures/model_comparison.png`
 - `reports/figures/confusion_matrix.png`
 - `reports/figures/feature_importance.png`
@@ -90,12 +93,13 @@ Interpretation emphasis:
 - review error cases and summarize observations,
 - report reliability via stratified K-fold + time-based holdout,
 - check leakage risk checklist and class imbalance (fatal precision/recall/F1),
-- inspect threshold sensitivity and probability calibration for fatal class.
+- inspect threshold sensitivity and probability calibration for fatal class,
+- include versioned evidence fields (`label_mapping_version`, `feature_set_mode`, `data_version_tag`).
 
 ## 7) Limitations & Next Step
 Current limitations:
-- sample dataset is small, results may be optimistic,
-- temporal/spatial features are limited,
+- weather missingness is high and can weaken meteorological interpretation,
+- temporal/spatial features are still limited for fine-grained local inference,
 - external enrichments (OSM, air quality, IMD) are placeholder-connected.
 
 Next executable steps:
@@ -140,9 +144,9 @@ streamlit run app/streamlit_app.py
 
 ## 1) 问题背景
 本项目聚焦伦敦道路交通安全，不只统计事故数量，而是预测事故严重程度：
-- `1 = 轻微`
+- `1 = 致命`
 - `2 = 严重`
-- `3 = 致命`
+- `3 = 轻微`
 
 目标是把课程作业升级为可复现、可解释、可展示、可面试深挖的机器学习项目。
 
@@ -173,6 +177,7 @@ python scripts/build_master_table.py --config configs/data.yaml
 ## 5) 方法与关键决策
 - 保留三分类：保留安全场景语义，不简化为二分类。
 - 指标用 Macro F1：避免多数类掩盖少数类（尤其 fatal）表现。
+- 默认采用 pre-event 特征集合训练主模型：减少后验信息泄漏风险。
 - 模型对比：Logistic Regression / Random Forest / HistGradientBoosting。
 - 可靠性验证：Stratified K-Fold + 时间外推切分（time-based holdout）。
 
@@ -190,6 +195,8 @@ python scripts/build_master_table.py --config configs/data.yaml
 - `artifacts/threshold_report.csv`
 - `artifacts/calibration_report.json`
 - `artifacts/hyperparameter_search.json`
+- `artifacts/ablation_leakage.csv`
+- `artifacts/missingness_by_time.csv`
 - `reports/figures/*.png`
 
 ## 7) 局限与下一步

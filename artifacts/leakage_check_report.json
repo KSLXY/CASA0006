@@ -1,14 +1,12 @@
 {
-  "risk_level": "high",
+  "risk_level": "low",
   "checklist": {
-    "suspicious_feature_present": true,
-    "row_overlap_train_test": true,
+    "suspicious_feature_present": false,
+    "row_overlap_train_test": false,
     "temporal_overlap_possible": true
   },
-  "suspicious_features_present": [
-    "number_of_casualties"
-  ],
-  "duplicate_row_overlap_count": 94927,
+  "suspicious_features_present": [],
+  "duplicate_row_overlap_count": 0,
   "notes": [
     "Random split can mix adjacent periods. Use time-based holdout for deployment realism.",
     "Presence of post-event variables should be justified in README to avoid leakage concerns."

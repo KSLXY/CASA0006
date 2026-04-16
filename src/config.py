@@ -19,6 +19,8 @@ class PathsConfig:
     threshold_artifact: Path
     calibration_artifact: Path
     search_artifact: Path
+    ablation_leakage_artifact: Path
+    missingness_by_time_artifact: Path
 
 
 @dataclass
@@ -27,8 +29,13 @@ class TrainConfig:
     test_size: float
     target_column: str
     feature_columns: list[str]
+    pre_event_feature_columns: list[str]
+    post_event_feature_columns: list[str]
+    feature_set_mode: str
     model_selection_metric: str
     enable_hyperparameter_search: bool
+    severity_code_map: dict[int, int]
+    label_mapping_version: str
 
 
 @dataclass
@@ -69,14 +76,26 @@ def load_settings(config_path: str | Path) -> Settings:
         threshold_artifact=_expand(paths_raw.get("threshold_artifact", "artifacts/threshold_report.csv")),
         calibration_artifact=_expand(paths_raw.get("calibration_artifact", "artifacts/calibration_report.json")),
         search_artifact=_expand(paths_raw.get("search_artifact", "artifacts/hyperparameter_search.json")),
+        ablation_leakage_artifact=_expand(paths_raw.get("ablation_leakage_artifact", "artifacts/ablation_leakage.csv")),
+        missingness_by_time_artifact=_expand(paths_raw.get("missingness_by_time_artifact", "artifacts/missingness_by_time.csv")),
     )
+    feature_columns = [str(c) for c in train_raw["feature_columns"]]
+    pre_event = [str(c) for c in train_raw.get("pre_event_feature_columns", feature_columns)]
+    post_event = [str(c) for c in train_raw.get("post_event_feature_columns", feature_columns)]
+    severity_code_map_raw = train_raw.get("severity_code_map", {1: 0, 2: 1, 3: 2})
+    severity_code_map = {int(k): int(v) for k, v in severity_code_map_raw.items()}
     train = TrainConfig(
         random_seed=int(train_raw["random_seed"]),
         test_size=float(train_raw["test_size"]),
         target_column=str(train_raw["target_column"]),
-        feature_columns=[str(c) for c in train_raw["feature_columns"]],
+        feature_columns=feature_columns,
+        pre_event_feature_columns=pre_event,
+        post_event_feature_columns=post_event,
+        feature_set_mode=str(train_raw.get("feature_set_mode", "pre_event")),
         model_selection_metric=str(train_raw["model_selection_metric"]),
         enable_hyperparameter_search=bool(train_raw.get("enable_hyperparameter_search", True)),
+        severity_code_map=severity_code_map,
+        label_mapping_version=str(train_raw.get("label_mapping_version", "stats19_default")),
     )
     app = AppConfig(
         project_name=str(app_raw["project_name"]),
