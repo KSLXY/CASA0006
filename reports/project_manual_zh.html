@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CASA0006 交通事故严重度分类系统说明书 | Project Manual</title>
+  <style>
+    :root {
+      --bg: #07090d;
+      --panel: #11161f;
+      --panel-soft: #17202d;
+      --text: #e8edf5;
+      --muted: #a9b4c5;
+      --line: #2a3445;
+      --accent: #5cc8ff;
+      --ok: #70d6a8;
+    }
+    body.light {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-soft: #edf3ff;
+      --text: #111827;
+      --muted: #4b5563;
+      --line: #d5deec;
+      --accent: #0b6ddf;
+      --ok: #15803d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    }
+    .wrap {
+      max-width: 1024px;
+      margin: 0 auto;
+      padding: 24px 20px 44px;
+    }
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .title h1 {
+      margin: 0;
+      font-size: 23px;
+      line-height: 1.25;
+      font-weight: 700;
+    }
+    .title p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    button {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 12.5px;
+    }
+    button.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent) inset;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin: 12px 0 16px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .card .k {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+    .card .v {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--ok);
+    }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 14px 12px;
+      margin-bottom: 10px;
+    }
+    h2 {
+      font-size: 17px;
+      margin: 0 0 8px;
+    }
+    p { margin: 0 0 7px; }
+    ul, ol { margin: 0; padding-left: 20px; }
+    li { margin: 0 0 4px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+      font-size: 13.5px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 7px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: var(--panel-soft); }
+    .lang { display: none; }
+    .lang.active { display: block; }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: 1fr; }
+      .title h1 { font-size: 21px; }
+    }
+  </style>
+</head>
+<body class="dark">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">
+        <h1>CASA0006 交通事故严重度分类系统说明书</h1>
+        <p>版本 v2.1 | 研究范围 London | 数据时段 2020-01-01 至 2024-12-31 | 更新日期 2026-04-16</p>
+      </div>
+      <div class="controls">
+        <button id="btnZh" class="active">中文</button>
+        <button id="btnEn">English</button>
+        <button id="btnTheme">切换日间模式</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card"><span class="k">主表规模</span><span class="v">约 50 万条记录</span></div>
+      <div class="card"><span class="k">核心任务</span><span class="v">事故严重度三级分类</span></div>
+      <div class="card"><span class="k">评估框架</span><span class="v">交叉验证与时间外推</span></div>
+      <div class="card"><span class="k">部署形态</span><span class="v">GitHub 与 Streamlit</span></div>
+    </div>
+
+    <main id="content-zh" class="lang active">
+      <section>
+        <h2>一、项目定位与目标</h2>
+        <p>本项目围绕伦敦道路交通安全场景，构建一个可复现、可解释、可在线演示的事故严重度分类系统，重点回答事故在既定上下文条件下更可能呈现何种严重程度。</p>
+        <p>系统目标包含三层。第一层是形成稳定的数据治理链路并保证数据可审计。第二层是建立多模型对比基线并输出一致的评估证据。第三层是将方法、结果和边界转化为可读的研究叙事，支持展示与沟通。</p>
+      </section>
+
+      <section>
+        <h2>二、数据来源与数据构成</h2>
+        <p>主数据来自英国交通部公开发布的 STATS19 道路安全数据集，覆盖 collision、vehicle、casualty 三类记录，时间段采用 2020 至 2024 年已验证年度数据，空间范围以伦敦相关记录为主。</p>
+        <p>天气数据用于补充事故发生时段附近的环境条件，节假日数据来自 GOV.UK Bank Holidays JSON 接口并用于识别假期效应，时间衍生特征由事故原始日期和时间字段直接生成。</p>
+        <table>
+          <thead>
+            <tr>
+              <th>数据模块</th>
+              <th>关键字段</th>
+              <th>作用</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Collision</td>
+              <td>accident_index, accident_severity, date, time, 经纬度, 道路信息</td>
+              <td>提供目标标签与事故上下文</td>
+            </tr>
+            <tr>
+              <td>Vehicle</td>
+              <td>vehicle_type, manoeuvre, junction_location, age_of_driver</td>
+              <td>补充车辆与驾驶行为线索</td>
+            </tr>
+            <tr>
+              <td>Casualty</td>
+              <td>casualty_class, casualty_type, casualty_severity, age_of_casualty</td>
+              <td>补充伤亡结构信息并支持一致性检查</td>
+            </tr>
+            <tr>
+              <td>Weather + Holiday</td>
+              <td>temperature, precipitation, radiation, is_bank_holiday</td>
+              <td>补充环境与日历因素</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>三、方法设计与技术路线</h2>
+        <ol>
+          <li>数据准备阶段将三张主表按业务键和时间字段对齐后形成统一主表，同时记录每一步 join 的匹配率与字段完整率。</li>
+          <li>数据治理阶段统一处理异常编码与缺失结构并保留治理台账，从而保证目标标签合法、来源可追溯、样本口径一致。</li>
+          <li>特征工程阶段在原始字段基础上构建时间上下文、天气条件和道路环境相关特征，并形成可复用的训练输入模板。</li>
+          <li>建模阶段使用 Logistic Regression、Random Forest、Histogram Gradient Boosting 三种方法建立可比较基线并保持接口一致。</li>
+          <li>验证阶段同时采用分层交叉验证与时间外推切分，以便分别评估统计稳健性与真实部署场景下的泛化能力。</li>
+          <li>解释阶段通过混淆矩阵、误差样本表、特征重要性和阈值分析共同还原模型行为并支撑结果解读。</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>四、检验方式与质量控制</h2>
+        <p>项目检验采用数据检验、训练检验、展示检验三条主线并行推进。数据检验会固定输出标签合法率、异常值计数、join 匹配率和关键字段缺失率。训练检验会固定输出 Macro F1、Balanced Accuracy、致命伤害类（Fatal）Precision、Recall、F1 以及校准相关指标。展示检验会核对 Streamlit 页面指标与 artifact 文件数值一致，避免叙事与证据脱节。</p>
+        <p>为避免结果偏差，流程中加入了泄漏检查报告，并区分可在事故前获得的特征与事故后才可观察到的字段，从而保证主要模型的输入边界清晰且应用语义一致。</p>
+      </section>
+
+      <section>
+        <h2>五、结果解释与业务意义</h2>
+        <p>当前系统已经形成可稳定复现的基线结果，并可在同一界面完成数据质量查看、模型比较、误差追踪与阈值讨论。该结果可支持两类核心任务，其一是快速识别不同条件下的严重度风险分布，其二是帮助说明哪些因素在样本中更常与高严重度事件共同出现。</p>
+        <p>通过将模型输出与误差样本并列展示，系统能够把“模型给出什么结论”与“结论来自哪些证据”对应起来，这一证据链结构可直接用于研究汇报、岗位展示和后续迭代决策。</p>
+      </section>
+
+      <section>
+        <h2>六、使用流程与展示建议</h2>
+        <p>本项目可按数据构建、模型训练、结果评估、在线展示四步运行，推荐先运行数据与训练脚本生成 artifacts，再启动 Streamlit 页面进行图表与结论联动核验，最后按 Overview、数据、数据质量、模型表现、可靠性、误差分析、预测、下一步的顺序进行展示。</p>
+        <p>在讲解过程中可围绕问题定义、数据处理、方法选择、证据解释、可复现性五个维度展开，使每个结论都能落在具体图表或文件输出上。</p>
+      </section>
+
+      <section>
+        <h2>七、项目边界与迭代方向</h2>
+        <p>系统边界定义为伦敦范围内的公开可得数据驱动分类任务，目标是提供结构化风险识别与研究证据组织能力。后续迭代优先方向包括提升天气数据匹配质量、强化时间外推表现、优化致命伤害类（Fatal）召回与概率校准，并继续扩展可解释特征与数据版本管理。</p>
+      </section>
+    </main>
+
+    <main id="content-en" class="lang">
+      <section>
+        <h2>1. Project Positioning and Goal</h2>
+        <p>This project builds a reproducible, interpretable, and web-deployable accident severity classifier for the London road safety context, with a clear objective to estimate which severity level is more likely under observed conditions.</p>
+        <p>The objective has three layers. The first layer is a fully traceable data governance pipeline. The second layer is a consistent multi-model baseline with comparable evaluation evidence. The third layer is a research narrative that connects method, result, and boundary in a readable way.</p>
+      </section>
+
+      <section>
+        <h2>2. Data Source and Data Structure</h2>
+        <p>The core data comes from the UK Department for Transport STATS19 open data, including collision, vehicle, and casualty records, using validated annual data from 2020 to 2024 with London-focused filtering.</p>
+        <p>Weather variables provide environmental context near accident time, bank holiday signals come from the GOV.UK JSON endpoint, and additional temporal features are derived directly from event date and time fields.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Module</th>
+              <th>Key Fields</th>
+              <th>Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Collision</td>
+              <td>accident_index, accident_severity, date, time, coordinates, road attributes</td>
+              <td>Target label and event context</td>
+            </tr>
+            <tr>
+              <td>Vehicle</td>
+              <td>vehicle_type, manoeuvre, junction_location, age_of_driver</td>
+              <td>Vehicle and driving behavior signals</td>
+            </tr>
+            <tr>
+              <td>Casualty</td>
+              <td>casualty_class, casualty_type, casualty_severity, age_of_casualty</td>
+              <td>Injury structure and consistency checks</td>
+            </tr>
+            <tr>
+              <td>Weather + Holiday</td>
+              <td>temperature, precipitation, radiation, is_bank_holiday</td>
+              <td>Environmental and calendar context</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>3. Method Design and Technical Route</h2>
+        <ol>
+          <li>Data preparation aligns the three core tables with business keys and time fields to produce one master table while recording join match rates and field completeness.</li>
+          <li>Data governance standardizes invalid codes and missing patterns with a persistent audit log so that label legality, provenance, and sample scope remain consistent.</li>
+          <li>Feature engineering combines native columns with temporal context, weather conditions, and road environment signals to create a reusable training feature template.</li>
+          <li>Modeling uses Logistic Regression, Random Forest, and Histogram Gradient Boosting under a unified interface to establish a comparable baseline suite.</li>
+          <li>Validation applies stratified cross-validation and time-based holdout together to quantify both statistical stability and deployment-like generalization.</li>
+          <li>Interpretation links confusion matrices, error-case tables, feature importance, and threshold analysis to explain model behavior with direct evidence.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>4. Validation and Quality Control</h2>
+        <p>The project uses a three-track quality framework across data checks, training checks, and presentation checks. Data checks report label validity, invalid-code counts, join match rates, and missingness of key fields. Training checks report Macro F1, Balanced Accuracy, Fatal class Precision, Recall, F1, and calibration metrics. Presentation checks ensure that Streamlit values are numerically aligned with artifact files.</p>
+        <p>A leakage check is integrated into the pipeline, and pre-event features are separated from post-event fields so that model inputs preserve clear semantic boundaries for practical use.</p>
+      </section>
+
+      <section>
+        <h2>5. Result Interpretation and Practical Value</h2>
+        <p>The current system provides a stable baseline that can be reproduced and inspected in one place, including data quality evidence, model comparison, error tracing, and threshold behavior. This supports two practical tasks, rapid understanding of severity risk patterns under different conditions and transparent explanation of factors that co-occur with higher severity outcomes.</p>
+        <p>By presenting model outputs together with error examples, the system builds a direct link between each conclusion and its evidence file, which improves clarity for research reporting and professional presentation.</p>
+      </section>
+
+      <section>
+        <h2>6. Runbook and Presentation Flow</h2>
+        <p>The recommended sequence runs in four stages, master table build, model training, model evaluation, and Streamlit presentation. A practical demo flow then follows Overview, Data, Data Quality, Model Performance, Reliability, Error Analysis, Prediction, and Next Step.</p>
+        <p>For communication, structure the narrative with problem framing, data process, method choice, evidence reading, and reproducibility so that every statement points to a specific figure or artifact.</p>
+      </section>
+
+      <section>
+        <h2>7. Project Boundary and Iteration Path</h2>
+        <p>The project boundary is a London-focused severity classification pipeline based on publicly available data, with a primary function to provide structured risk identification and evidence-ready research outputs. The next iteration path prioritizes weather join quality, stronger time-holdout performance, better Fatal class recall and calibration, and richer interpretable features with versioned data governance.</p>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const btnZh = document.getElementById('btnZh');
+    const btnEn = document.getElementById('btnEn');
+    const btnTheme = document.getElementById('btnTheme');
+    const zh = document.getElementById('content-zh');
+    const en = document.getElementById('content-en');
+
+    function setThemeButtonText() {
+      const isZh = (localStorage.getItem('manual_lang') || 'zh') === 'zh';
+      const isLight = document.body.classList.contains('light');
+      if (isZh) {
+        btnTheme.textContent = isLight ? '切换深色模式' : '切换日间模式';
+      } else {
+        btnTheme.textContent = isLight ? 'Switch Dark Mode' : 'Toggle Light Mode';
+      }
+    }
+
+    function setLang(lang) {
+      const isZh = lang === 'zh';
+      zh.classList.toggle('active', isZh);
+      en.classList.toggle('active', !isZh);
+      btnZh.classList.toggle('active', isZh);
+      btnEn.classList.toggle('active', !isZh);
+      localStorage.setItem('manual_lang', lang);
+      setThemeButtonText();
+    }
+
+    function setTheme(theme) {
+      const isLight = theme === 'light';
+      document.body.classList.toggle('light', isLight);
+      localStorage.setItem('manual_theme', theme);
+      setThemeButtonText();
+    }
+
+    btnZh.addEventListener('click', () => setLang('zh'));
+    btnEn.addEventListener('click', () => setLang('en'));
+    btnTheme.addEventListener('click', () => {
+      const next = document.body.classList.contains('light') ? 'dark' : 'light';
+      setTheme(next);
+    });
+
+    setLang(localStorage.getItem('manual_lang') || 'zh');
+    setTheme(localStorage.getItem('manual_theme') || 'dark');
+  </script>
+</body>
+</html>
