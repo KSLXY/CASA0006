@@ -139,21 +139,21 @@
   <div class="wrap">
     <div class="topbar">
       <div class="title">
-        <h1>CASA0006 交通事故严重度分类系统说明书</h1>
-        <p>版本 v2.1 | 研究范围 London | 数据时段 2020-01-01 至 2024-12-31 | 更新日期 2026-04-16</p>
+        <h1 id="pageTitle">CASA0006 交通事故严重度分类系统说明书</h1>
+        <p id="pageSubtitle">版本 v2.1 | 研究范围 London | 数据时段 2020-01-01 至 2024-12-31 | 更新日期 2026-04-16</p>
       </div>
       <div class="controls">
-        <button id="btnZh" class="active">中文</button>
+        <button id="btnZh" class="active">Chinese</button>
         <button id="btnEn">English</button>
-        <button id="btnTheme">切换日间模式</button>
+        <button id="btnTheme">日间模式</button>
       </div>
     </div>
 
     <div class="grid">
-      <div class="card"><span class="k">主表规模</span><span class="v">约 50 万条记录</span></div>
-      <div class="card"><span class="k">核心任务</span><span class="v">事故严重度三级分类</span></div>
-      <div class="card"><span class="k">评估框架</span><span class="v">交叉验证与时间外推</span></div>
-      <div class="card"><span class="k">部署形态</span><span class="v">GitHub 与 Streamlit</span></div>
+      <div class="card"><span id="kpi1k" class="k">主表规模</span><span id="kpi1v" class="v">约 50 万条记录</span></div>
+      <div class="card"><span id="kpi2k" class="k">核心任务</span><span id="kpi2v" class="v">事故严重度三级分类</span></div>
+      <div class="card"><span id="kpi3k" class="k">评估框架</span><span id="kpi3v" class="v">交叉验证与时间外推</span></div>
+      <div class="card"><span id="kpi4k" class="k">部署形态</span><span id="kpi4v" class="v">GitHub 与 Streamlit</span></div>
     </div>
 
     <main id="content-zh" class="lang active">
@@ -323,14 +323,51 @@
     const btnTheme = document.getElementById('btnTheme');
     const zh = document.getElementById('content-zh');
     const en = document.getElementById('content-en');
+    const pageTitle = document.getElementById('pageTitle');
+    const pageSubtitle = document.getElementById('pageSubtitle');
+    const kpi1k = document.getElementById('kpi1k');
+    const kpi1v = document.getElementById('kpi1v');
+    const kpi2k = document.getElementById('kpi2k');
+    const kpi2v = document.getElementById('kpi2v');
+    const kpi3k = document.getElementById('kpi3k');
+    const kpi3v = document.getElementById('kpi3v');
+    const kpi4k = document.getElementById('kpi4k');
+    const kpi4v = document.getElementById('kpi4v');
+
+    const I18N = {
+      zh: {
+        pageTitle: 'CASA0006 交通事故严重度分类系统说明书',
+        pageSubtitle: '版本 v2.1 | 研究范围 London | 数据时段 2020-01-01 至 2024-12-31 | 更新日期 2026-04-16',
+        kpi1k: '主表规模',
+        kpi1v: '约 50 万条记录',
+        kpi2k: '核心任务',
+        kpi2v: '事故严重度三级分类',
+        kpi3k: '评估框架',
+        kpi3v: '交叉验证与时间外推',
+        kpi4k: '部署形态',
+        kpi4v: 'GitHub 与 Streamlit',
+      },
+      en: {
+        pageTitle: 'CASA0006 Accident Severity Classification System Manual',
+        pageSubtitle: 'Version v2.1 | Study Area London | Time Coverage 2020-01-01 to 2024-12-31 | Updated on 2026-04-16',
+        kpi1k: 'Master Table Size',
+        kpi1v: 'Around 500,000 records',
+        kpi2k: 'Core Task',
+        kpi2v: 'Three-class severity classification',
+        kpi3k: 'Evaluation Framework',
+        kpi3v: 'Cross-validation and time holdout',
+        kpi4k: 'Deployment',
+        kpi4v: 'GitHub and Streamlit',
+      }
+    };
 
     function setThemeButtonText() {
       const isZh = (localStorage.getItem('manual_lang') || 'zh') === 'zh';
       const isLight = document.body.classList.contains('light');
       if (isZh) {
-        btnTheme.textContent = isLight ? '切换深色模式' : '切换日间模式';
+        btnTheme.textContent = isLight ? '夜间模式' : '日间模式';
       } else {
-        btnTheme.textContent = isLight ? 'Switch Dark Mode' : 'Toggle Light Mode';
+        btnTheme.textContent = isLight ? 'Dark Mode' : 'Light Mode';
       }
     }
 
@@ -341,6 +378,17 @@
       btnZh.classList.toggle('active', isZh);
       btnEn.classList.toggle('active', !isZh);
       localStorage.setItem('manual_lang', lang);
+      const t = I18N[lang];
+      pageTitle.textContent = t.pageTitle;
+      pageSubtitle.textContent = t.pageSubtitle;
+      kpi1k.textContent = t.kpi1k;
+      kpi1v.textContent = t.kpi1v;
+      kpi2k.textContent = t.kpi2k;
+      kpi2v.textContent = t.kpi2v;
+      kpi3k.textContent = t.kpi3k;
+      kpi3v.textContent = t.kpi3v;
+      kpi4k.textContent = t.kpi4k;
+      kpi4v.textContent = t.kpi4v;
       setThemeButtonText();
     }
 
