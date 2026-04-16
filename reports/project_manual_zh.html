@@ -153,7 +153,7 @@
       <div class="card"><span id="kpi1k" class="k">主表规模</span><span id="kpi1v" class="v">约 50 万条记录</span></div>
       <div class="card"><span id="kpi2k" class="k">核心任务</span><span id="kpi2v" class="v">事故严重度三级分类</span></div>
       <div class="card"><span id="kpi3k" class="k">评估框架</span><span id="kpi3v" class="v">交叉验证与时间外推</span></div>
-      <div class="card"><span id="kpi4k" class="k">部署形态</span><span id="kpi4v" class="v">GitHub 与 Streamlit</span></div>
+      <div class="card"><span id="kpi4k" class="k">交付产物</span><span id="kpi4v" class="v">GitHub 仓库与研究文档</span></div>
     </div>
 
     <main id="content-zh" class="lang active">
@@ -214,7 +214,7 @@
 
       <section>
         <h2>四、检验方式与质量控制</h2>
-        <p>项目检验采用数据检验、训练检验、展示检验三条主线并行推进。数据检验会固定输出标签合法率、异常值计数、join 匹配率和关键字段缺失率。训练检验会固定输出 Macro F1、Balanced Accuracy、致命伤害类（Fatal）Precision、Recall、F1 以及校准相关指标。展示检验会核对 Streamlit 页面指标与 artifact 文件数值一致，避免叙事与证据脱节。</p>
+        <p>项目检验采用数据检验、训练检验、产物一致性检验三条主线并行推进。数据检验会固定输出标签合法率、异常值计数、join 匹配率和关键字段缺失率。训练检验会固定输出 Macro F1、Balanced Accuracy、致命伤害类（Fatal）Precision、Recall、F1 以及校准相关指标。产物一致性检验会核对文档结论与 artifact 文件数值一致，避免叙事与证据脱节。</p>
         <p>为避免结果偏差，流程中加入了泄漏检查报告，并区分可在事故前获得的特征与事故后才可观察到的字段，从而保证主要模型的输入边界清晰且应用语义一致。</p>
       </section>
 
@@ -226,12 +226,68 @@
 
       <section>
         <h2>六、使用流程与展示建议</h2>
-        <p>本项目可按数据构建、模型训练、结果评估、在线展示四步运行，推荐先运行数据与训练脚本生成 artifacts，再启动 Streamlit 页面进行图表与结论联动核验，最后按 Overview、数据、数据质量、模型表现、可靠性、误差分析、预测、下一步的顺序进行展示。</p>
+        <p>本项目可按数据构建、模型训练、结果评估、文档展示四步运行，推荐先运行数据与训练脚本生成 artifacts，再基于说明书中的图表与表格完成结论核验，最后按问题背景、数据构成、质量控制、方法比较、误差分析、边界与迭代方向的顺序进行展示。</p>
         <p>在讲解过程中可围绕问题定义、数据处理、方法选择、证据解释、可复现性五个维度展开，使每个结论都能落在具体图表或文件输出上。</p>
       </section>
 
       <section>
-        <h2>七、项目边界与迭代方向</h2>
+        <h2>七、证据索引与链接导航</h2>
+        <p>以下索引链接可直接跳转到仓库对应文件，用于快速定位数据证据、评估结果与展示文档。</p>
+        <table>
+          <thead>
+            <tr>
+              <th>索引项</th>
+              <th>说明</th>
+              <th>链接</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>项目总览</td>
+              <td>项目结构、运行方式与核心结论</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/README.md" target="_blank" rel="noopener noreferrer">README.md</a></td>
+            </tr>
+            <tr>
+              <td>模型总指标</td>
+              <td>单次训练指标与标签映射版本信息</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/metrics.json" target="_blank" rel="noopener noreferrer">artifacts/metrics.json</a></td>
+            </tr>
+            <tr>
+              <td>交叉验证结果</td>
+              <td>折间稳定性与平均表现</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/metrics_cv.json" target="_blank" rel="noopener noreferrer">artifacts/metrics_cv.json</a></td>
+            </tr>
+            <tr>
+              <td>模型比较表</td>
+              <td>不同模型在同口径下的对比结果</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/model_compare.csv" target="_blank" rel="noopener noreferrer">artifacts/model_compare.csv</a></td>
+            </tr>
+            <tr>
+              <td>误差样本</td>
+              <td>错误预测样本与上下文字段</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/error_cases.csv" target="_blank" rel="noopener noreferrer">artifacts/error_cases.csv</a></td>
+            </tr>
+            <tr>
+              <td>数据质量报告</td>
+              <td>标签合法率、缺失率与样本覆盖统计</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/data_quality_report.json" target="_blank" rel="noopener noreferrer">artifacts/data_quality_report.json</a></td>
+            </tr>
+            <tr>
+              <td>泄漏检查报告</td>
+              <td>特征泄漏风险与检测结果</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/leakage_check_report.json" target="_blank" rel="noopener noreferrer">artifacts/leakage_check_report.json</a></td>
+            </tr>
+            <tr>
+              <td>五分钟讲稿</td>
+              <td>结构化项目讲述文本</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/reports/interview_story_5min.md" target="_blank" rel="noopener noreferrer">reports/interview_story_5min.md</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>八、项目边界与迭代方向</h2>
         <p>系统边界定义为伦敦范围内的公开可得数据驱动分类任务，目标是提供结构化风险识别与研究证据组织能力。后续迭代优先方向包括提升天气数据匹配质量、强化时间外推表现、优化致命伤害类（Fatal）召回与概率校准，并继续扩展可解释特征与数据版本管理。</p>
       </section>
     </main>
@@ -294,7 +350,7 @@
 
       <section>
         <h2>4. Validation and Quality Control</h2>
-        <p>The project uses a three-track quality framework across data checks, training checks, and presentation checks. Data checks report label validity, invalid-code counts, join match rates, and missingness of key fields. Training checks report Macro F1, Balanced Accuracy, Fatal class Precision, Recall, F1, and calibration metrics. Presentation checks ensure that Streamlit values are numerically aligned with artifact files.</p>
+        <p>The project uses a three-track quality framework across data checks, training checks, and artifact consistency checks. Data checks report label validity, invalid-code counts, join match rates, and missingness of key fields. Training checks report Macro F1, Balanced Accuracy, Fatal class Precision, Recall, F1, and calibration metrics. Artifact consistency checks ensure that narrative statements are numerically aligned with artifact files.</p>
         <p>A leakage check is integrated into the pipeline, and pre-event features are separated from post-event fields so that model inputs preserve clear semantic boundaries for practical use.</p>
       </section>
 
@@ -306,12 +362,68 @@
 
       <section>
         <h2>6. Runbook and Presentation Flow</h2>
-        <p>The recommended sequence runs in four stages, master table build, model training, model evaluation, and Streamlit presentation. A practical demo flow then follows Overview, Data, Data Quality, Model Performance, Reliability, Error Analysis, Prediction, and Next Step.</p>
+        <p>The recommended sequence runs in four stages, master table build, model training, model evaluation, and document presentation. A practical flow then follows problem framing, data structure, quality control, method comparison, error analysis, and iteration planning.</p>
         <p>For communication, structure the narrative with problem framing, data process, method choice, evidence reading, and reproducibility so that every statement points to a specific figure or artifact.</p>
       </section>
 
       <section>
-        <h2>7. Project Boundary and Iteration Path</h2>
+        <h2>7. Evidence Index and Navigation</h2>
+        <p>The following links provide direct access to repository files so that data evidence, evaluation outputs, and project documents can be inspected quickly.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Index Item</th>
+              <th>Description</th>
+              <th>Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Project Overview</td>
+              <td>Structure, runbook, and main findings</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/README.md" target="_blank" rel="noopener noreferrer">README.md</a></td>
+            </tr>
+            <tr>
+              <td>Primary Metrics</td>
+              <td>Single-run metrics and label-mapping metadata</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/metrics.json" target="_blank" rel="noopener noreferrer">artifacts/metrics.json</a></td>
+            </tr>
+            <tr>
+              <td>Cross-validation Metrics</td>
+              <td>Fold-level stability and aggregate performance</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/metrics_cv.json" target="_blank" rel="noopener noreferrer">artifacts/metrics_cv.json</a></td>
+            </tr>
+            <tr>
+              <td>Model Comparison</td>
+              <td>Like-for-like model benchmark table</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/model_compare.csv" target="_blank" rel="noopener noreferrer">artifacts/model_compare.csv</a></td>
+            </tr>
+            <tr>
+              <td>Error Cases</td>
+              <td>Mispredicted samples with contextual fields</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/error_cases.csv" target="_blank" rel="noopener noreferrer">artifacts/error_cases.csv</a></td>
+            </tr>
+            <tr>
+              <td>Data Quality Report</td>
+              <td>Label validity, missingness, and coverage statistics</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/data_quality_report.json" target="_blank" rel="noopener noreferrer">artifacts/data_quality_report.json</a></td>
+            </tr>
+            <tr>
+              <td>Leakage Check Report</td>
+              <td>Feature leakage risk and detection outcomes</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/leakage_check_report.json" target="_blank" rel="noopener noreferrer">artifacts/leakage_check_report.json</a></td>
+            </tr>
+            <tr>
+              <td>Interview Story Script</td>
+              <td>Structured five-minute presentation script</td>
+              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/reports/interview_story_5min.md" target="_blank" rel="noopener noreferrer">reports/interview_story_5min.md</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>8. Project Boundary and Iteration Path</h2>
         <p>The project boundary is a London-focused severity classification pipeline based on publicly available data, with a primary function to provide structured risk identification and evidence-ready research outputs. The next iteration path prioritizes weather join quality, stronger time-holdout performance, better Fatal class recall and calibration, and richer interpretable features with versioned data governance.</p>
       </section>
     </main>
@@ -344,8 +456,8 @@
         kpi2v: '事故严重度三级分类',
         kpi3k: '评估框架',
         kpi3v: '交叉验证与时间外推',
-        kpi4k: '部署形态',
-        kpi4v: 'GitHub 与 Streamlit',
+        kpi4k: '交付产物',
+        kpi4v: 'GitHub 仓库与研究文档',
       },
       en: {
         pageTitle: 'CASA0006 Accident Severity Classification System Manual',
@@ -356,8 +468,8 @@
         kpi2v: 'Three-class severity classification',
         kpi3k: 'Evaluation Framework',
         kpi3v: 'Cross-validation and time holdout',
-        kpi4k: 'Deployment',
-        kpi4v: 'GitHub and Streamlit',
+        kpi4k: 'Deliverables',
+        kpi4v: 'GitHub repository and research documents',
       }
     };
 
