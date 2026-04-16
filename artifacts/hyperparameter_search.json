@@ -5,7 +5,7 @@
     "search_enabled": false,
     "best_params": {},
     "best_score_f1_macro": NaN,
-    "fit_rows_for_search": 402780,
+    "fit_rows_for_search": 28,
     "top_trials": []
   },
   {
@@ -14,7 +14,7 @@
     "search_enabled": false,
     "best_params": {},
     "best_score_f1_macro": NaN,
-    "fit_rows_for_search": 402780,
+    "fit_rows_for_search": 28,
     "top_trials": []
   },
   {
@@ -23,7 +23,7 @@
     "search_enabled": false,
     "best_params": {},
     "best_score_f1_macro": NaN,
-    "fit_rows_for_search": 402780,
+    "fit_rows_for_search": 28,
     "top_trials": []
   }
 ]

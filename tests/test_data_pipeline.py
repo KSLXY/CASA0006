@@ -39,4 +39,7 @@ def test_prepare_dataset_filters_invalid_target_and_creates_xy():
     assert len(prepared.X) == 3
     assert len(prepared.y) == 3
     assert set(prepared.y.unique()) == {0, 1, 2}
-
+    # STATS19 semantic mapping check: 1->Fatal(0), 2->Serious(1), 3->Slight(2)
+    assert prepared.y.iloc[0] == 0
+    assert prepared.y.iloc[1] == 1
+    assert prepared.y.iloc[2] == 2

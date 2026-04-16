@@ -9,14 +9,60 @@ paths:
   threshold_artifact: artifacts/threshold_report.csv
   calibration_artifact: artifacts/calibration_report.json
   search_artifact: artifacts/hyperparameter_search.json
+  ablation_leakage_artifact: artifacts/ablation_leakage.csv
+  missingness_by_time_artifact: artifacts/missingness_by_time.csv
 
 train:
   random_seed: 42
   test_size: 0.2
   target_column: accident_severity
+  label_mapping_version: stats19_2025_v1
+  severity_code_map:
+    1: 0
+    2: 1
+    3: 2
+  feature_set_mode: pre_event
   model_selection_metric: f1_macro
   enable_hyperparameter_search: false
   feature_columns:
+    - number_of_vehicles
+    - hour
+    - day_of_week
+    - month
+    - is_weekend
+    - season
+    - cloud_cover
+    - sunshine
+    - global_radiation
+    - max_temp
+    - mean_temp
+    - min_temp
+    - precipitation
+    - pressure
+    - snow
+    - hour_peak
+    - precipitation_peak_interaction
+    - low_visibility_proxy
+  pre_event_feature_columns:
+    - number_of_vehicles
+    - hour
+    - day_of_week
+    - month
+    - is_weekend
+    - season
+    - cloud_cover
+    - sunshine
+    - global_radiation
+    - max_temp
+    - mean_temp
+    - min_temp
+    - precipitation
+    - pressure
+    - snow
+    - hour_peak
+    - precipitation_peak_interaction
+    - low_visibility_proxy
+  post_event_feature_columns:
     - number_of_vehicles
     - number_of_casualties
     - hour
@@ -40,6 +86,6 @@ train:
 app:
   project_name: London Road Collision Severity Project
   class_labels:
-    - Slight
-    - Serious
     - Fatal
+    - Serious
+    - Slight
