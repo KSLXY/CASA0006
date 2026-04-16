@@ -1,76 +1,53 @@
-# London Road Collision Severity Classification
+# London Road Collision Severity Classification Research
 
-This project upgrades `casa0006_individual_work.ipynb` into a portfolio-ready classification research story:
-**London traffic safety problem -> data quality challenge -> model comparison -> interpretation -> deployment**.
+This repository focuses on a London-centered accident severity classification study with a reproducible pipeline and evidence-oriented outputs.
 
-## 1) Problem Background
-Road-collision severity is a practical safety signal for city management.  
-Instead of only counting accidents, this project predicts severity levels:
+## 1) Problem Definition
+Road-collision severity is treated as a structured safety signal rather than a simple accident count.  
+The project predicts three severity levels:
 - `1 = Fatal`
 - `2 = Serious`
 - `3 = Slight`
 
-The objective is to turn coursework into a reproducible, explainable, and interview-ready ML workflow.
-
-## 2) Project Goal
-Build an end-to-end classification pipeline that can:
-- clean and validate mixed-source data,
-- compare multiple models fairly,
-- explain what the model gets wrong,
-- and expose results in a public Streamlit app.
+## 2) Research Objective
+The workflow is designed to:
+- govern and validate multi-source data,
+- compare models under a consistent protocol,
+- inspect model errors with traceable evidence,
+- and maintain reproducible outputs for review and iteration.
 
 ## 3) Data Sources
-- London weather data (Kaggle public dataset)
-- UK DfT road collision records
+- UK DfT road safety records (collision, vehicle, casualty)
+- London weather dataset (Kaggle public data)
 - UK bank holidays (GOV.UK API)
-- Demo sample file for reproducibility: `data/sample/merged_sample.csv`
-- Planned public enrichments: OSM road attributes, London air quality, IMD (deprivation)
+- Reproducible sample dataset: `data/sample/merged_sample.csv`
+- Planned enrichments: OSM road attributes, London air quality, IMD
 
-For full data download/merge, use:
+Dataset build commands:
 ```bash
 python scripts/fetch_datasets.py --config configs/data.yaml --from 2015-01-01 --to 2024-12-31
 python scripts/build_master_table.py --config configs/data.yaml
 ```
 
-## 4) Data Quality Challenge (Why `-10` matters)
-In real collision records, target labels may contain invalid values such as `-10`.  
-If not handled, this can break training or silently bias results.
+## 4) Data Quality Governance
+The target label is strictly constrained to `{1, 2, 3}`.  
+Invalid labels such as `-10` are removed before training, and removal counts are written into artifacts for auditability.
 
-In this project:
-- valid target space is strictly `{1, 2, 3}`,
-- invalid target rows are filtered before model training,
-- removed row count is logged as an artifact metric.
+## 5) Method and Modeling Decisions
+- Three-class formulation is kept to preserve safety-relevant granularity.
+- Macro F1 is used for model selection to avoid majority-class dominance.
+- Pre-event features are the default training set to control leakage risk.
+- Models compared under the same interface:
+  - Logistic Regression
+  - Random Forest
+  - HistGradientBoosting
+- Reliability is evaluated with Stratified K-Fold and time-based holdout.
 
-This cleaning decision is part of the model story, not just preprocessing noise.
+## 6) Outputs and Evidence
+If `data/processed/processed_master.parquet` exists, it is used as the default training source.  
+Otherwise the pipeline falls back to `data/sample/merged_sample.csv`.
 
-## 5) Method & Decisions
-### Pipeline flow
-```mermaid
-flowchart LR
-    A["Raw Data (Weather + Collision)"] --> B["Cleaning & Label Validation"]
-    B --> C["Feature Table Construction"]
-    C --> D["Train/Test Split"]
-    D --> E["Model Comparison (3 models)"]
-    E --> F["Select Best by Macro F1"]
-    F --> G["Error Analysis + Reports"]
-    G --> H["Streamlit Deployment"]
-```
-
-### Why these decisions
-- Keep **3 severity classes**: preserves the public-safety granularity.
-- Use **Macro F1** for selection: gives each class equal importance, including minority fatal class.
-- Use **pre-event feature set** as default training mode: avoids post-event leakage in forward risk estimation.
-- Compare 3 models:
-  - Logistic Regression (interpretable baseline)
-  - Random Forest (nonlinear, robust)
-  - HistGradientBoosting (strong tabular baseline)
-
-## 6) Results (Baseline Evidence First)
-This repository now prioritizes **credible baseline evidence** over headline score.
-If `data/processed/processed_master.parquet` is available, training uses it by default.
-If not available, training falls back to the sample file for demo continuity.
-
-Generated artifacts:
+Core artifacts:
 - `artifacts/metrics.json`
 - `artifacts/metrics_cv.json`
 - `artifacts/model_compare.csv`
@@ -87,32 +64,15 @@ Generated artifacts:
 - `reports/figures/confusion_matrix.png`
 - `reports/figures/feature_importance.png`
 
-Interpretation emphasis:
-- show model ranking by Accuracy + Macro F1,
-- inspect confusion matrix (especially serious vs fatal boundary),
-- review error cases and summarize observations,
-- report reliability via stratified K-fold + time-based holdout,
-- check leakage risk checklist and class imbalance (fatal precision/recall/F1),
-- inspect threshold sensitivity and probability calibration for fatal class,
-- include versioned evidence fields (`label_mapping_version`, `feature_set_mode`, `data_version_tag`).
+## 7) Boundaries and Next Iteration
+Current boundary is a London-focused, publicly available-data severity classification pipeline for risk estimation support and research analysis.
 
-## 7) Limitations & Next Step
-Current limitations:
-- weather missingness is high and can weaken meteorological interpretation,
-- temporal/spatial features are still limited for fine-grained local inference,
-- external enrichments (OSM, air quality, IMD) are placeholder-connected.
+Priority next steps:
+- train on larger processed master data,
+- improve external data fusion quality,
+- strengthen calibration and class-imbalance handling.
 
-Next executable steps:
-- run on larger processed master dataset (`data/processed/processed_master.parquet`),
-- activate OSM/air quality/IMD enrichments,
-- strengthen calibration, thresholding and class-balance strategies.
-
-## 8) Reliability, Ethics, and Boundaries
-- This project is for **risk estimation support**, not an automated enforcement decision system.
-- Model outputs should be interpreted with uncertainty awareness and human oversight.
-- Data quality and representativeness limits are explicitly logged in artifacts and UI.
-
-## Reproducible Command Chain
+## 8) Reproducible Command Chain
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -122,69 +82,62 @@ python scripts/build_master_table.py --config configs/data.yaml
 python -m src.train --config configs/default.yaml
 python -m src.evaluate --config configs/default.yaml
 python -m src.predict --config configs/default.yaml --input-file examples/sample_input.json
-streamlit run app/streamlit_app.py
 ```
 
-## Public Interfaces
+## 9) Public Interfaces
 - Train: `python -m src.train --config configs/default.yaml`
 - Evaluate: `python -m src.evaluate --config configs/default.yaml`
 - Predict: `python -m src.predict --config configs/default.yaml --input-file examples/sample_input.json`
 - Fetch data: `python scripts/fetch_datasets.py --config configs/data.yaml --from 2015-01-01 --to 2024-12-31`
 - Build master: `python scripts/build_master_table.py --config configs/data.yaml`
-- App entry: `app/streamlit_app.py`
-- New evidence artifacts:
-  - `artifacts/data_quality_report.json`
-  - `artifacts/leakage_check_report.json`
-  - `artifacts/threshold_report.csv`
-  - `artifacts/calibration_report.json`
 
 ---
 
-# 中文版（Chinese Version）
+# 中文版
 
-## 1) 问题背景
-本项目聚焦伦敦道路交通安全，不只统计事故数量，而是预测事故严重程度：
+## 1) 问题定义
+本项目聚焦伦敦道路交通安全场景，将事故严重度作为结构化风险信号进行预测，而非只做事故数量统计。  
+标签定义为三分类：
 - `1 = 致命`
 - `2 = 严重`
 - `3 = 轻微`
 
-目标是把课程作业升级为可复现、可解释、可展示、可面试深挖的机器学习项目。
-
-## 2) 项目目标
-搭建端到端分类流程，实现：
-- 多源数据清洗与标签治理，
-- 多模型对比与可审计选型，
-- 误差分析与可靠性验证，
-- Streamlit 在线展示与交互预测。
+## 2) 研究目标
+项目主流程用于实现以下目标：
+- 多源数据治理与标签合法性校验，
+- 统一评估口径下的模型对比，
+- 可追溯误差分析与证据输出，
+- 可复现训练评估链路。
 
 ## 3) 数据来源
+- 英国 DfT 道路安全数据（collision, vehicle, casualty）
 - 伦敦天气数据（Kaggle 公开数据）
-- 英国 DfT 道路碰撞数据
 - 英国法定节假日（GOV.UK API）
-- 演示样本数据：`data/sample/merged_sample.csv`
-- 计划补全：OSM 路网属性、伦敦空气质量、IMD（贫困脆弱性）数据
+- 可复现样本：`data/sample/merged_sample.csv`
+- 计划补全：OSM 路网属性、伦敦空气质量、IMD
 
-全量数据流程命令：
+数据构建命令：
 ```bash
 python scripts/fetch_datasets.py --config configs/data.yaml --from 2015-01-01 --to 2024-12-31
 python scripts/build_master_table.py --config configs/data.yaml
 ```
 
-## 4) 数据质量挑战（为什么 `-10` 很关键）
-真实碰撞数据中目标标签可能出现无效值（如 `-10`）。若不处理，会导致训练失败或结果偏差。  
-本项目将目标标签严格限制在 `{1,2,3}`，并记录被剔除的异常样本数量，作为数据治理证据。
+## 4) 数据质量治理
+目标标签严格限制在 `{1,2,3}`。  
+`-10` 等异常编码在训练前剔除，剔除数量写入 artifact，确保过程可审计。
 
-## 5) 方法与关键决策
-- 保留三分类：保留安全场景语义，不简化为二分类。
-- 指标用 Macro F1：避免多数类掩盖少数类（尤其 fatal）表现。
-- 默认采用 pre-event 特征集合训练主模型：减少后验信息泄漏风险。
-- 模型对比：Logistic Regression / Random Forest / HistGradientBoosting。
-- 可靠性验证：Stratified K-Fold + 时间外推切分（time-based holdout）。
+## 5) 方法与建模决策
+- 保留三分类以保持安全语义粒度。
+- 采用 Macro F1 做模型选型，降低多数类掩盖风险。
+- 默认使用 pre-event 特征集合，控制后验信息泄漏。
+- 对比模型为 Logistic Regression、Random Forest、HistGradientBoosting。
+- 可靠性验证采用 Stratified K-Fold 与时间外推切分。
 
-## 6) 结果与产物（先可信，再提分）
-当前仓库默认优先产出可信基线证据。若存在 `data/processed/processed_master.parquet`，训练默认使用主表。  
-若主表暂未构建，则自动回退到样本文件，保证演示流程可运行。  
-核心产物包括：
+## 6) 结果产物与证据
+若存在 `data/processed/processed_master.parquet`，训练默认使用主表。  
+若主表不可用，流程自动回退至 `data/sample/merged_sample.csv`。
+
+核心产物：
 - `artifacts/metrics.json`
 - `artifacts/metrics_cv.json`
 - `artifacts/model_compare.csv`
@@ -197,18 +150,17 @@ python scripts/build_master_table.py --config configs/data.yaml
 - `artifacts/hyperparameter_search.json`
 - `artifacts/ablation_leakage.csv`
 - `artifacts/missingness_by_time.csv`
-- `reports/figures/*.png`
+- `reports/figures/model_comparison.png`
+- `reports/figures/confusion_matrix.png`
+- `reports/figures/feature_importance.png`
 
-## 7) 局限与下一步
-当前局限：
-- 样本规模偏小，指标可能偏乐观；
-- 时空特征仍有限；
-- OSM/空气质量/IMD 仍是占位接入，待进一步打通。
+## 7) 边界与下一步
+当前边界为伦敦范围内、基于公开数据的事故严重度分类研究流程，定位是风险估计支持与研究分析。
 
-下一步：
-- 在 `data/processed/processed_master.parquet` 上做更大规模训练；
-- 完成外部公开数据补全；
-- 强化校准、阈值策略与类别不平衡处理。
+下一步优先方向：
+- 在更大规模主表上训练，
+- 提升外部数据融合质量，
+- 强化校准与类别不平衡处理。
 
 ## 8) 复现命令链
 ```bash
@@ -220,5 +172,4 @@ python scripts/build_master_table.py --config configs/data.yaml
 python -m src.train --config configs/default.yaml
 python -m src.evaluate --config configs/default.yaml
 python -m src.predict --config configs/default.yaml --input-file examples/sample_input.json
-streamlit run app/streamlit_app.py
 ```
