@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CASA0006 交通事故严重度分类系统说明书 | Project Manual</title>
+  <title>CASA0006 伦敦交通事故严重度分类研究说明书 | Project Manual</title>
   <style>
     :root {
       --bg: #07090d;
@@ -139,7 +139,7 @@
   <div class="wrap">
     <div class="topbar">
       <div class="title">
-        <h1 id="pageTitle">CASA0006 交通事故严重度分类系统说明书</h1>
+        <h1 id="pageTitle">CASA0006 伦敦交通事故严重度分类研究说明书</h1>
         <p id="pageSubtitle">版本 v2.1 | 研究范围 London | 数据时段 2020-01-01 至 2024-12-31 | 更新日期 2026-04-16</p>
       </div>
       <div class="controls">
@@ -231,7 +231,88 @@
       </section>
 
       <section>
-        <h2>七、证据索引与链接导航</h2>
+        <h2>七、仓库文件与作用总表</h2>
+        <p>下表列出当前上传到 GitHub 的核心文件与目录，覆盖数据、代码、配置、测试与结果产物，便于快速定位每个组件的用途。</p>
+        <table>
+          <thead>
+            <tr>
+              <th>路径</th>
+              <th>内容</th>
+              <th>作用</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>README.md</td>
+              <td>项目总览、运行入口、关键结论</td>
+              <td>作为项目主文档，统一说明问题定义与复现方式</td>
+            </tr>
+            <tr>
+              <td>src/</td>
+              <td>训练、评估、预测与数据管道核心模块</td>
+              <td>提供分类任务主流程与可复用函数</td>
+            </tr>
+            <tr>
+              <td>scripts/</td>
+              <td>数据下载、主表构建、外部数据接入脚本</td>
+              <td>负责数据准备与离线预处理流程</td>
+            </tr>
+            <tr>
+              <td>configs/</td>
+              <td>模型与数据配置文件</td>
+              <td>统一参数管理，保证实验可复现</td>
+            </tr>
+            <tr>
+              <td>artifacts/</td>
+              <td>metrics、CV、误差样本、泄漏检查、阈值与模型文件</td>
+              <td>沉淀训练结果与证据文件，支持结果核验</td>
+            </tr>
+            <tr>
+              <td>reports/figures/</td>
+              <td>混淆矩阵、特征重要性、模型比较图</td>
+              <td>提供可视化证据用于解释模型行为</td>
+            </tr>
+            <tr>
+              <td>reports/project_manual_zh.html</td>
+              <td>中英文说明书与索引导航</td>
+              <td>提供结构化展示与文档阅读入口</td>
+            </tr>
+            <tr>
+              <td>tests/</td>
+              <td>数据与训练流程测试脚本</td>
+              <td>校验管道稳定性与关键逻辑一致性</td>
+            </tr>
+            <tr>
+              <td>app/streamlit_app.py</td>
+              <td>演示层入口脚本</td>
+              <td>用于展示项目结果，不承载研究结论本体</td>
+            </tr>
+            <tr>
+              <td>data/</td>
+              <td>数据目录结构与样例数据</td>
+              <td>管理原始层、中间层、处理层数据组织</td>
+            </tr>
+            <tr>
+              <td>examples/sample_input.json</td>
+              <td>预测输入样例</td>
+              <td>用于验证推理接口输入格式</td>
+            </tr>
+            <tr>
+              <td>notebooks/01_analysis_showcase.ipynb</td>
+              <td>探索分析与过程记录</td>
+              <td>补充研究过程可读性与思路回溯</td>
+            </tr>
+            <tr>
+              <td>requirements.txt 与 runtime.txt</td>
+              <td>依赖清单与运行时版本</td>
+              <td>保证环境一致与部署可执行</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>八、证据索引与链接导航</h2>
         <p>以下索引链接可直接跳转到仓库对应文件，用于快速定位数据证据、评估结果与展示文档。</p>
         <table>
           <thead>
@@ -277,17 +358,12 @@
               <td>特征泄漏风险与检测结果</td>
               <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/leakage_check_report.json" target="_blank" rel="noopener noreferrer">artifacts/leakage_check_report.json</a></td>
             </tr>
-            <tr>
-              <td>五分钟讲稿</td>
-              <td>结构化项目讲述文本</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/reports/interview_story_5min.md" target="_blank" rel="noopener noreferrer">reports/interview_story_5min.md</a></td>
-            </tr>
           </tbody>
         </table>
       </section>
 
       <section>
-        <h2>八、项目边界与迭代方向</h2>
+        <h2>九、项目边界与迭代方向</h2>
         <p>系统边界定义为伦敦范围内的公开可得数据驱动分类任务，目标是提供结构化风险识别与研究证据组织能力。后续迭代优先方向包括提升天气数据匹配质量、强化时间外推表现、优化致命伤害类（Fatal）召回与概率校准，并继续扩展可解释特征与数据版本管理。</p>
       </section>
     </main>
@@ -367,7 +443,88 @@
       </section>
 
       <section>
-        <h2>7. Evidence Index and Navigation</h2>
+        <h2>7. Repository File Map and Purpose</h2>
+        <p>The following table lists the core files and folders currently uploaded to GitHub, covering data, code, configuration, testing, and output artifacts.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Path</th>
+              <th>Content</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>README.md</td>
+              <td>Project overview, run commands, and key findings</td>
+              <td>Primary project document for scope and reproducibility</td>
+            </tr>
+            <tr>
+              <td>src/</td>
+              <td>Core modules for training, evaluation, prediction, and data pipeline</td>
+              <td>Main implementation of the severity classification workflow</td>
+            </tr>
+            <tr>
+              <td>scripts/</td>
+              <td>Dataset download, master-table build, and external data integration scripts</td>
+              <td>Data preparation and offline preprocessing entry points</td>
+            </tr>
+            <tr>
+              <td>configs/</td>
+              <td>Data and model configuration files</td>
+              <td>Centralized parameter control for reproducible runs</td>
+            </tr>
+            <tr>
+              <td>artifacts/</td>
+              <td>Metrics, CV results, error cases, leakage checks, thresholds, and model file</td>
+              <td>Evidence files for validation and result interpretation</td>
+            </tr>
+            <tr>
+              <td>reports/figures/</td>
+              <td>Confusion matrix, feature importance, and model comparison plots</td>
+              <td>Visual evidence for model behavior explanation</td>
+            </tr>
+            <tr>
+              <td>reports/project_manual_zh.html</td>
+              <td>Bilingual manual with index navigation</td>
+              <td>Structured documentation and reading entry point</td>
+            </tr>
+            <tr>
+              <td>tests/</td>
+              <td>Pipeline and training validation tests</td>
+              <td>Checks stability and logic consistency</td>
+            </tr>
+            <tr>
+              <td>app/streamlit_app.py</td>
+              <td>Demo-layer entry script</td>
+              <td>Result presentation interface</td>
+            </tr>
+            <tr>
+              <td>data/</td>
+              <td>Raw/interim/processed structure and sample data</td>
+              <td>Data organization across processing stages</td>
+            </tr>
+            <tr>
+              <td>examples/sample_input.json</td>
+              <td>Prediction input sample</td>
+              <td>Input format verification for inference interface</td>
+            </tr>
+            <tr>
+              <td>notebooks/01_analysis_showcase.ipynb</td>
+              <td>Exploratory analysis notebook</td>
+              <td>Method traceability and analysis context</td>
+            </tr>
+            <tr>
+              <td>requirements.txt and runtime.txt</td>
+              <td>Dependency list and runtime version</td>
+              <td>Environment consistency for execution and deployment</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>8. Evidence Index and Navigation</h2>
         <p>The following links provide direct access to repository files so that data evidence, evaluation outputs, and project documents can be inspected quickly.</p>
         <table>
           <thead>
@@ -413,17 +570,12 @@
               <td>Feature leakage risk and detection outcomes</td>
               <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/leakage_check_report.json" target="_blank" rel="noopener noreferrer">artifacts/leakage_check_report.json</a></td>
             </tr>
-            <tr>
-              <td>Interview Story Script</td>
-              <td>Structured five-minute presentation script</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/reports/interview_story_5min.md" target="_blank" rel="noopener noreferrer">reports/interview_story_5min.md</a></td>
-            </tr>
           </tbody>
         </table>
       </section>
 
       <section>
-        <h2>8. Project Boundary and Iteration Path</h2>
+        <h2>9. Project Boundary and Iteration Path</h2>
         <p>The project boundary is a London-focused severity classification pipeline based on publicly available data, with a primary function to provide structured risk identification and evidence-ready research outputs. The next iteration path prioritizes weather join quality, stronger time-holdout performance, better Fatal class recall and calibration, and richer interpretable features with versioned data governance.</p>
       </section>
     </main>
@@ -448,7 +600,7 @@
 
     const I18N = {
       zh: {
-        pageTitle: 'CASA0006 交通事故严重度分类系统说明书',
+        pageTitle: 'CASA0006 伦敦交通事故严重度分类研究说明书',
         pageSubtitle: '版本 v2.1 | 研究范围 London | 数据时段 2020-01-01 至 2024-12-31 | 更新日期 2026-04-16',
         kpi1k: '主表规模',
         kpi1v: '约 50 万条记录',
@@ -460,7 +612,7 @@
         kpi4v: 'GitHub 仓库与研究文档',
       },
       en: {
-        pageTitle: 'CASA0006 Accident Severity Classification System Manual',
+        pageTitle: 'CASA0006 London Road Accident Severity Classification Research Manual',
         pageSubtitle: 'Version v2.1 | Study Area London | Time Coverage 2020-01-01 to 2024-12-31 | Updated on 2026-04-16',
         kpi1k: 'Master Table Size',
         kpi1v: 'Around 500,000 records',
