@@ -1,677 +1,133 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CASA0006 STATS19 交通事故严重度分类研究说明书 | Project Manual</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CASA0006 Project Brief</title>
   <style>
-    :root {
-      --bg: #07090d;
-      --panel: #11161f;
-      --panel-soft: #17202d;
-      --text: #e8edf5;
-      --muted: #a9b4c5;
-      --line: #2a3445;
-      --accent: #5cc8ff;
-      --ok: #70d6a8;
-    }
-    body.light {
-      --bg: #f5f7fb;
-      --panel: #ffffff;
-      --panel-soft: #edf3ff;
-      --text: #111827;
-      --muted: #4b5563;
-      --line: #d5deec;
-      --accent: #0b6ddf;
-      --ok: #15803d;
-    }
-    * { box-sizing: border-box; }
     body {
       margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font: 15px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.65;
+      color: #1f2933;
+      background: #f7f8fa;
     }
-    .wrap {
-      max-width: 1024px;
+    main {
+      max-width: 960px;
       margin: 0 auto;
-      padding: 24px 20px 44px;
+      padding: 48px 24px 64px;
+      background: #ffffff;
     }
-    .topbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 14px;
+    h1, h2 {
+      line-height: 1.2;
+      color: #102a43;
     }
-    .title h1 {
-      margin: 0;
-      font-size: 23px;
-      line-height: 1.25;
-      font-weight: 700;
+    h1 {
+      font-size: 2.3rem;
+      margin-bottom: 8px;
     }
-    .title p {
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 13px;
+    h2 {
+      margin-top: 36px;
+      border-top: 1px solid #d9e2ec;
+      padding-top: 24px;
     }
-    .controls {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    button {
-      border: 1px solid var(--line);
-      background: var(--panel);
-      color: var(--text);
-      padding: 8px 12px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 12.5px;
-    }
-    button.active {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent) inset;
+    .lead {
+      font-size: 1.08rem;
+      color: #52606d;
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 10px;
-      margin: 12px 0 16px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 20px 0;
     }
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 10px 12px;
+    .metric {
+      border: 1px solid #d9e2ec;
+      border-radius: 8px;
+      padding: 14px;
+      background: #f8fafc;
     }
-    .card .k {
+    .metric strong {
       display: block;
-      color: var(--muted);
-      font-size: 12px;
-      margin-bottom: 6px;
+      font-size: 1.35rem;
+      color: #0b5cad;
     }
-    .card .v {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--ok);
+    code {
+      background: #eef2f7;
+      padding: 2px 5px;
+      border-radius: 4px;
     }
-    section {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 14px 14px 12px;
-      margin-bottom: 10px;
-    }
-    h2 {
-      font-size: 17px;
-      margin: 0 0 8px;
-    }
-    p { margin: 0 0 7px; }
-    ul, ol { margin: 0; padding-left: 20px; }
-    li { margin: 0 0 4px; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 4px;
-      font-size: 13.5px;
-    }
-    th, td {
-      border: 1px solid var(--line);
-      padding: 7px 8px;
-      text-align: left;
-      vertical-align: top;
-    }
-    th { background: var(--panel-soft); }
-    .lang { display: none; }
-    .lang.active { display: block; }
-    @media (max-width: 900px) {
-      .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 560px) {
-      .grid { grid-template-columns: 1fr; }
-      .title h1 { font-size: 21px; }
+    ul {
+      padding-left: 1.4rem;
     }
   </style>
 </head>
-<body class="dark">
-  <div class="wrap">
-    <div class="topbar">
-      <div class="title">
-        <h1 id="pageTitle">CASA0006 STATS19 交通事故严重度分类研究说明书</h1>
-        <p id="pageSubtitle">版本 v2.1 | 研究范围 STATS19 完整主表 | 数据时段 2020-01-01 至 2024-12-31 | 更新日期 2026-04-16</p>
-      </div>
-      <div class="controls">
-        <button id="btnZh" class="active">Chinese</button>
-        <button id="btnEn">English</button>
-        <button id="btnTheme">日间模式</button>
-      </div>
-    </div>
+<body>
+<main>
+  <h1>交通事故严重度风险建模项目 Brief</h1>
+  <p class="lead">
+    本项目使用英国 DfT STATS19 道路事故数据，基于事故发生前可获得的道路、时间与环境信号，
+    对事故严重度进行三分类预测。它被设计为一个公开 GitHub 作品集项目：读者可以快速理解问题和交付物，
+    同时仍能看到数据治理、模型验证和研究边界。
+  </p>
 
-    <div class="grid">
-      <div class="card"><span id="kpi1k" class="k">主表规模</span><span id="kpi1v" class="v">约 50 万条记录</span></div>
-      <div class="card"><span id="kpi2k" class="k">核心任务</span><span id="kpi2v" class="v">事故严重度三级分类</span></div>
-      <div class="card"><span id="kpi3k" class="k">评估框架</span><span id="kpi3v" class="v">交叉验证与时间外推</span></div>
-      <div class="card"><span id="kpi4k" class="k">交付产物</span><span id="kpi4v" class="v">GitHub 仓库与研究文档</span></div>
-    </div>
-
-    <main id="content-zh" class="lang active">
-      <section>
-        <h2>一、项目定位与目标</h2>
-        <p>本项目围绕 STATS19 完整主表道路交通安全场景，构建一个可复现、可解释、可在线演示的事故严重度分类系统，重点回答事故在既定上下文条件下更可能呈现何种严重程度。</p>
-        <p>系统目标包含三层。第一层是形成稳定的数据治理链路并保证数据可审计。第二层是建立多模型对比基线并输出一致的评估证据。第三层是将方法、结果和边界转化为可读的研究叙事，支持展示与沟通。</p>
-      </section>
-
-      <section>
-        <h2>二、数据来源与数据构成</h2>
-        <p>主数据来自英国交通部公开发布的 STATS19 道路安全数据集，覆盖 collision、vehicle、casualty 三类记录，时间段采用 2020 至 2024 年已验证年度数据，空间范围为当前完整处理主表。</p>
-        <p>天气数据用于补充事故发生时段附近的环境条件，节假日数据来自 GOV.UK Bank Holidays JSON 接口并用于识别假期效应，时间衍生特征由事故原始日期和时间字段直接生成。</p>
-        <table>
-          <thead>
-            <tr>
-              <th>数据模块</th>
-              <th>关键字段</th>
-              <th>作用</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Collision</td>
-              <td>accident_index, accident_severity, date, time, 经纬度, 道路信息</td>
-              <td>提供目标标签与事故上下文</td>
-            </tr>
-            <tr>
-              <td>Vehicle</td>
-              <td>vehicle_type, manoeuvre, junction_location, age_of_driver</td>
-              <td>补充车辆与驾驶行为线索</td>
-            </tr>
-            <tr>
-              <td>Casualty</td>
-              <td>casualty_class, casualty_type, casualty_severity, age_of_casualty</td>
-              <td>补充伤亡结构信息并支持一致性检查</td>
-            </tr>
-            <tr>
-              <td>Weather + Holiday</td>
-              <td>temperature, precipitation, radiation, is_bank_holiday</td>
-              <td>补充环境与日历因素</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section>
-        <h2>三、方法设计与技术路线</h2>
-        <ol>
-          <li>数据准备阶段将三张主表按业务键和时间字段对齐后形成统一主表，同时记录每一步 join 的匹配率与字段完整率。</li>
-          <li>数据治理阶段统一处理异常编码与缺失结构并保留治理台账，从而保证目标标签合法、来源可追溯、样本口径一致。</li>
-          <li>特征工程阶段在原始字段基础上构建时间上下文、天气条件和道路环境相关特征，并形成可复用的训练输入模板。</li>
-          <li>建模阶段使用 Logistic Regression、Random Forest、Histogram Gradient Boosting 三种方法建立可比较基线并保持接口一致。</li>
-          <li>验证阶段同时采用分层交叉验证与时间外推切分，以便分别评估统计稳健性与真实部署场景下的泛化能力。</li>
-          <li>解释阶段通过混淆矩阵、误差样本表、特征重要性和阈值分析共同还原模型行为并支撑结果解读。</li>
-        </ol>
-      </section>
-
-      <section>
-        <h2>四、检验方式与质量控制</h2>
-        <p>项目检验采用数据检验、训练检验、产物一致性检验三条主线并行推进。数据检验会固定输出标签合法率、异常值计数、join 匹配率和关键字段缺失率。训练检验会固定输出 Macro F1、Balanced Accuracy、致命伤害类（Fatal）Precision、Recall、F1 以及校准相关指标。产物一致性检验会核对文档结论与 artifact 文件数值一致，避免叙事与证据脱节。</p>
-        <p>为避免结果偏差，流程中加入了泄漏检查报告，并区分可在事故前获得的特征与事故后才可观察到的字段，从而保证主要模型的输入边界清晰且应用语义一致。</p>
-      </section>
-
-      <section>
-        <h2>五、结果解释与业务意义</h2>
-        <p>当前系统已经形成可稳定复现的基线结果，并可在同一界面完成数据质量查看、模型比较、误差追踪与阈值讨论。该结果可支持两类核心任务，其一是快速识别不同条件下的严重度风险分布，其二是帮助说明哪些因素在样本中更常与高严重度事件共同出现。</p>
-        <p>通过将模型输出与误差样本并列展示，系统能够把“模型给出什么结论”与“结论来自哪些证据”对应起来，这一证据链结构可直接用于研究汇报、岗位展示和后续迭代决策。</p>
-      </section>
-
-      <section>
-        <h2>六、使用流程与展示建议</h2>
-        <p>本项目可按数据构建、模型训练、结果评估、文档展示四步运行，推荐先运行数据与训练脚本生成 artifacts，再基于说明书中的图表与表格完成结论核验，最后按问题背景、数据构成、质量控制、方法比较、误差分析、边界与迭代方向的顺序进行展示。</p>
-        <p>在讲解过程中可围绕问题定义、数据处理、方法选择、证据解释、可复现性五个维度展开，使每个结论都能落在具体图表或文件输出上。</p>
-      </section>
-
-      <section>
-        <h2>七、仓库文件与作用总表</h2>
-        <p>下表列出当前上传到 GitHub 的核心文件与目录，覆盖数据、代码、配置、测试与结果产物，便于快速定位每个组件的用途。</p>
-        <table>
-          <thead>
-            <tr>
-              <th>路径</th>
-              <th>内容</th>
-              <th>作用</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>README.md</td>
-              <td>项目总览、运行入口、关键结论</td>
-              <td>作为项目主文档，统一说明问题定义与复现方式</td>
-            </tr>
-            <tr>
-              <td>src/</td>
-              <td>训练、评估、预测与数据管道核心模块</td>
-              <td>提供分类任务主流程与可复用函数</td>
-            </tr>
-            <tr>
-              <td>scripts/</td>
-              <td>数据下载、主表构建、外部数据接入脚本</td>
-              <td>负责数据准备与离线预处理流程</td>
-            </tr>
-            <tr>
-              <td>configs/</td>
-              <td>模型与数据配置文件</td>
-              <td>统一参数管理，保证实验可复现</td>
-            </tr>
-            <tr>
-              <td>artifacts/</td>
-              <td>metrics、CV、误差样本、泄漏检查、阈值与模型文件</td>
-              <td>沉淀训练结果与证据文件，支持结果核验</td>
-            </tr>
-            <tr>
-              <td>reports/figures/</td>
-              <td>混淆矩阵、特征重要性、模型比较图</td>
-              <td>提供可视化证据用于解释模型行为</td>
-            </tr>
-            <tr>
-              <td>reports/project_manual_zh.html</td>
-              <td>中英文说明书与索引导航</td>
-              <td>提供结构化展示与文档阅读入口</td>
-            </tr>
-            <tr>
-              <td>tests/</td>
-              <td>数据与训练流程测试脚本</td>
-              <td>校验管道稳定性与关键逻辑一致性</td>
-            </tr>
-            <tr>
-              <td>app/streamlit_app.py</td>
-              <td>演示层入口脚本</td>
-              <td>用于展示项目结果，不承载研究结论本体</td>
-            </tr>
-            <tr>
-              <td>data/</td>
-              <td>数据目录结构与样例数据</td>
-              <td>管理原始层、中间层、处理层数据组织</td>
-            </tr>
-            <tr>
-              <td>examples/sample_input.json</td>
-              <td>预测输入样例</td>
-              <td>用于验证推理接口输入格式</td>
-            </tr>
-            <tr>
-              <td>notebooks/01_analysis_showcase.ipynb</td>
-              <td>探索分析与过程记录</td>
-              <td>补充研究过程可读性与思路回溯</td>
-            </tr>
-            <tr>
-              <td>requirements.txt 与 runtime.txt</td>
-              <td>依赖清单与运行时版本</td>
-              <td>保证环境一致与部署可执行</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section>
-        <h2>八、证据索引与链接导航</h2>
-        <p>以下索引链接可直接跳转到仓库对应文件，用于快速定位数据证据、评估结果与展示文档。</p>
-        <table>
-          <thead>
-            <tr>
-              <th>索引项</th>
-              <th>说明</th>
-              <th>链接</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>项目总览</td>
-              <td>项目结构、运行方式与核心结论</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/README.md" target="_blank" rel="noopener noreferrer">README.md</a></td>
-            </tr>
-            <tr>
-              <td>模型总指标</td>
-              <td>单次训练指标与标签映射版本信息</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/metrics.json" target="_blank" rel="noopener noreferrer">artifacts/metrics.json</a></td>
-            </tr>
-            <tr>
-              <td>交叉验证结果</td>
-              <td>折间稳定性与平均表现</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/metrics_cv.json" target="_blank" rel="noopener noreferrer">artifacts/metrics_cv.json</a></td>
-            </tr>
-            <tr>
-              <td>模型比较表</td>
-              <td>不同模型在同口径下的对比结果</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/model_compare.csv" target="_blank" rel="noopener noreferrer">artifacts/model_compare.csv</a></td>
-            </tr>
-            <tr>
-              <td>误差样本</td>
-              <td>错误预测样本与上下文字段</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/error_cases.csv" target="_blank" rel="noopener noreferrer">artifacts/error_cases.csv</a></td>
-            </tr>
-            <tr>
-              <td>数据质量报告</td>
-              <td>标签合法率、缺失率与样本覆盖统计</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/data_quality_report.json" target="_blank" rel="noopener noreferrer">artifacts/data_quality_report.json</a></td>
-            </tr>
-            <tr>
-              <td>泄漏检查报告</td>
-              <td>特征泄漏风险与检测结果</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/leakage_check_report.json" target="_blank" rel="noopener noreferrer">artifacts/leakage_check_report.json</a></td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section>
-        <h2>九、项目边界与迭代方向</h2>
-        <p>系统边界定义为 STATS19 完整主表上的公开可得数据驱动分类任务，目标是提供结构化风险识别与研究证据组织能力。后续迭代优先方向包括提升天气数据匹配质量、强化时间外推表现、优化致命伤害类（Fatal）召回与概率校准，并继续扩展可解释特征与数据版本管理。</p>
-      </section>
-    </main>
-
-    <main id="content-en" class="lang">
-      <section>
-        <h2>1. Project Positioning and Goal</h2>
-        <p>This project builds a reproducible, interpretable, and web-deployable accident severity classifier for the full STATS19 master table, with a clear objective to estimate which severity level is more likely under observed conditions.</p>
-        <p>The objective has three layers. The first layer is a fully traceable data governance pipeline. The second layer is a consistent multi-model baseline with comparable evaluation evidence. The third layer is a research narrative that connects method, result, and boundary in a readable way.</p>
-      </section>
-
-      <section>
-        <h2>2. Data Source and Data Structure</h2>
-        <p>The core data comes from the UK Department for Transport STATS19 open data, including collision, vehicle, and casualty records, using validated annual data from 2020 to 2024 in the complete processed master table.</p>
-        <p>Weather variables provide environmental context near accident time, bank holiday signals come from the GOV.UK JSON endpoint, and additional temporal features are derived directly from event date and time fields.</p>
-        <table>
-          <thead>
-            <tr>
-              <th>Module</th>
-              <th>Key Fields</th>
-              <th>Role</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Collision</td>
-              <td>accident_index, accident_severity, date, time, coordinates, road attributes</td>
-              <td>Target label and event context</td>
-            </tr>
-            <tr>
-              <td>Vehicle</td>
-              <td>vehicle_type, manoeuvre, junction_location, age_of_driver</td>
-              <td>Vehicle and driving behavior signals</td>
-            </tr>
-            <tr>
-              <td>Casualty</td>
-              <td>casualty_class, casualty_type, casualty_severity, age_of_casualty</td>
-              <td>Injury structure and consistency checks</td>
-            </tr>
-            <tr>
-              <td>Weather + Holiday</td>
-              <td>temperature, precipitation, radiation, is_bank_holiday</td>
-              <td>Environmental and calendar context</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section>
-        <h2>3. Method Design and Technical Route</h2>
-        <ol>
-          <li>Data preparation aligns the three core tables with business keys and time fields to produce one master table while recording join match rates and field completeness.</li>
-          <li>Data governance standardizes invalid codes and missing patterns with a persistent audit log so that label legality, provenance, and sample scope remain consistent.</li>
-          <li>Feature engineering combines native columns with temporal context, weather conditions, and road environment signals to create a reusable training feature template.</li>
-          <li>Modeling uses Logistic Regression, Random Forest, and Histogram Gradient Boosting under a unified interface to establish a comparable baseline suite.</li>
-          <li>Validation applies stratified cross-validation and time-based holdout together to quantify both statistical stability and deployment-like generalization.</li>
-          <li>Interpretation links confusion matrices, error-case tables, feature importance, and threshold analysis to explain model behavior with direct evidence.</li>
-        </ol>
-      </section>
-
-      <section>
-        <h2>4. Validation and Quality Control</h2>
-        <p>The project uses a three-track quality framework across data checks, training checks, and artifact consistency checks. Data checks report label validity, invalid-code counts, join match rates, and missingness of key fields. Training checks report Macro F1, Balanced Accuracy, Fatal class Precision, Recall, F1, and calibration metrics. Artifact consistency checks ensure that narrative statements are numerically aligned with artifact files.</p>
-        <p>A leakage check is integrated into the pipeline, and pre-event features are separated from post-event fields so that model inputs preserve clear semantic boundaries for practical use.</p>
-      </section>
-
-      <section>
-        <h2>5. Result Interpretation and Practical Value</h2>
-        <p>The current system provides a stable baseline that can be reproduced and inspected in one place, including data quality evidence, model comparison, error tracing, and threshold behavior. This supports two practical tasks, rapid understanding of severity risk patterns under different conditions and transparent explanation of factors that co-occur with higher severity outcomes.</p>
-        <p>By presenting model outputs together with error examples, the system builds a direct link between each conclusion and its evidence file, which improves clarity for research reporting and professional presentation.</p>
-      </section>
-
-      <section>
-        <h2>6. Runbook and Presentation Flow</h2>
-        <p>The recommended sequence runs in four stages, master table build, model training, model evaluation, and document presentation. A practical flow then follows problem framing, data structure, quality control, method comparison, error analysis, and iteration planning.</p>
-        <p>For communication, structure the narrative with problem framing, data process, method choice, evidence reading, and reproducibility so that every statement points to a specific figure or artifact.</p>
-      </section>
-
-      <section>
-        <h2>7. Repository File Map and Purpose</h2>
-        <p>The following table lists the core files and folders currently uploaded to GitHub, covering data, code, configuration, testing, and output artifacts.</p>
-        <table>
-          <thead>
-            <tr>
-              <th>Path</th>
-              <th>Content</th>
-              <th>Purpose</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>README.md</td>
-              <td>Project overview, run commands, and key findings</td>
-              <td>Primary project document for scope and reproducibility</td>
-            </tr>
-            <tr>
-              <td>src/</td>
-              <td>Core modules for training, evaluation, prediction, and data pipeline</td>
-              <td>Main implementation of the severity classification workflow</td>
-            </tr>
-            <tr>
-              <td>scripts/</td>
-              <td>Dataset download, master-table build, and external data integration scripts</td>
-              <td>Data preparation and offline preprocessing entry points</td>
-            </tr>
-            <tr>
-              <td>configs/</td>
-              <td>Data and model configuration files</td>
-              <td>Centralized parameter control for reproducible runs</td>
-            </tr>
-            <tr>
-              <td>artifacts/</td>
-              <td>Metrics, CV results, error cases, leakage checks, thresholds, and model file</td>
-              <td>Evidence files for validation and result interpretation</td>
-            </tr>
-            <tr>
-              <td>reports/figures/</td>
-              <td>Confusion matrix, feature importance, and model comparison plots</td>
-              <td>Visual evidence for model behavior explanation</td>
-            </tr>
-            <tr>
-              <td>reports/project_manual_zh.html</td>
-              <td>Bilingual manual with index navigation</td>
-              <td>Structured documentation and reading entry point</td>
-            </tr>
-            <tr>
-              <td>tests/</td>
-              <td>Pipeline and training validation tests</td>
-              <td>Checks stability and logic consistency</td>
-            </tr>
-            <tr>
-              <td>app/streamlit_app.py</td>
-              <td>Demo-layer entry script</td>
-              <td>Result presentation interface</td>
-            </tr>
-            <tr>
-              <td>data/</td>
-              <td>Raw/interim/processed structure and full master-table data</td>
-              <td>Data organization across processing stages</td>
-            </tr>
-            <tr>
-              <td>examples/sample_input.json</td>
-              <td>Prediction input sample</td>
-              <td>Input format verification for inference interface</td>
-            </tr>
-            <tr>
-              <td>notebooks/01_analysis_showcase.ipynb</td>
-              <td>Exploratory analysis notebook</td>
-              <td>Method traceability and analysis context</td>
-            </tr>
-            <tr>
-              <td>requirements.txt and runtime.txt</td>
-              <td>Dependency list and runtime version</td>
-              <td>Environment consistency for execution and deployment</td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section>
-        <h2>8. Evidence Index and Navigation</h2>
-        <p>The following links provide direct access to repository files so that data evidence, evaluation outputs, and project documents can be inspected quickly.</p>
-        <table>
-          <thead>
-            <tr>
-              <th>Index Item</th>
-              <th>Description</th>
-              <th>Link</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Project Overview</td>
-              <td>Structure, runbook, and main findings</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/README.md" target="_blank" rel="noopener noreferrer">README.md</a></td>
-            </tr>
-            <tr>
-              <td>Primary Metrics</td>
-              <td>Single-run metrics and label-mapping metadata</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/metrics.json" target="_blank" rel="noopener noreferrer">artifacts/metrics.json</a></td>
-            </tr>
-            <tr>
-              <td>Cross-validation Metrics</td>
-              <td>Fold-level stability and aggregate performance</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/metrics_cv.json" target="_blank" rel="noopener noreferrer">artifacts/metrics_cv.json</a></td>
-            </tr>
-            <tr>
-              <td>Model Comparison</td>
-              <td>Like-for-like model benchmark table</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/model_compare.csv" target="_blank" rel="noopener noreferrer">artifacts/model_compare.csv</a></td>
-            </tr>
-            <tr>
-              <td>Error Cases</td>
-              <td>Mispredicted samples with contextual fields</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/error_cases.csv" target="_blank" rel="noopener noreferrer">artifacts/error_cases.csv</a></td>
-            </tr>
-            <tr>
-              <td>Data Quality Report</td>
-              <td>Label validity, missingness, and coverage statistics</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/data_quality_report.json" target="_blank" rel="noopener noreferrer">artifacts/data_quality_report.json</a></td>
-            </tr>
-            <tr>
-              <td>Leakage Check Report</td>
-              <td>Feature leakage risk and detection outcomes</td>
-              <td><a href="https://github.com/KSLXY/CASA0006/blob/main/artifacts/leakage_check_report.json" target="_blank" rel="noopener noreferrer">artifacts/leakage_check_report.json</a></td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-
-      <section>
-        <h2>9. Project Boundary and Iteration Path</h2>
-        <p>The project boundary is a full STATS19 master-table severity classification pipeline based on publicly available data, with a primary function to provide structured risk identification and evidence-ready research outputs. The next iteration path prioritizes weather join quality, stronger time-holdout performance, better Fatal class recall and calibration, and richer interpretable features with versioned data governance.</p>
-      </section>
-    </main>
+  <div class="grid">
+    <div class="metric"><span>样本数</span><strong>503,475</strong></div>
+    <div class="metric"><span>研究模型</span><strong>Random Forest</strong></div>
+    <div class="metric"><span>Accuracy</span><strong>0.654</strong></div>
+    <div class="metric"><span>Macro F1</span><strong>0.381</strong></div>
+    <div class="metric"><span>Fatal 筛查召回</span><strong>0.630</strong></div>
   </div>
 
-  <script>
-    const btnZh = document.getElementById('btnZh');
-    const btnEn = document.getElementById('btnEn');
-    const btnTheme = document.getElementById('btnTheme');
-    const zh = document.getElementById('content-zh');
-    const en = document.getElementById('content-en');
-    const pageTitle = document.getElementById('pageTitle');
-    const pageSubtitle = document.getElementById('pageSubtitle');
-    const kpi1k = document.getElementById('kpi1k');
-    const kpi1v = document.getElementById('kpi1v');
-    const kpi2k = document.getElementById('kpi2k');
-    const kpi2v = document.getElementById('kpi2v');
-    const kpi3k = document.getElementById('kpi3k');
-    const kpi3v = document.getElementById('kpi3v');
-    const kpi4k = document.getElementById('kpi4k');
-    const kpi4v = document.getElementById('kpi4v');
+  <h2>1. 研究问题</h2>
+  <p>
+    交通安全分析不能只看事故数量，也需要关注哪些事故环境更可能对应高严重度后果。
+    本项目的问题是：在不使用明显后验信息的前提下，能否用道路、时间和环境特征建立一个可复现的事故严重度预测基线？
+  </p>
 
-    const I18N = {
-      zh: {
-        pageTitle: 'CASA0006 STATS19 交通事故严重度分类研究说明书',
-        pageSubtitle: '版本 v2.1 | 研究范围 STATS19 完整主表 | 数据时段 2020-01-01 至 2024-12-31 | 更新日期 2026-04-16',
-        kpi1k: '主表规模',
-        kpi1v: '约 50 万条记录',
-        kpi2k: '核心任务',
-        kpi2v: '事故严重度三级分类',
-        kpi3k: '评估框架',
-        kpi3v: '交叉验证与时间外推',
-        kpi4k: '交付产物',
-        kpi4v: 'GitHub 仓库与研究文档',
-      },
-      en: {
-        pageTitle: 'CASA0006 STATS19 Road Accident Severity Classification Research Manual',
-        pageSubtitle: 'Version v2.1 | Study Area Full STATS19 Master Table | Time Coverage 2020-01-01 to 2024-12-31 | Updated on 2026-04-16',
-        kpi1k: 'Master Table Size',
-        kpi1v: 'Around 500,000 records',
-        kpi2k: 'Core Task',
-        kpi2v: 'Three-class severity classification',
-        kpi3k: 'Evaluation Framework',
-        kpi3v: 'Cross-validation and time holdout',
-        kpi4k: 'Deliverables',
-        kpi4v: 'GitHub repository and research documents',
-      }
-    };
+  <h2>2. 数据与边界</h2>
+  <ul>
+    <li>核心数据来自 UK DfT STATS19 碰撞、车辆与伤亡记录。</li>
+    <li>伦敦天气数据只是覆盖有限的外部补充来源，不定义研究空间范围。</li>
+    <li>默认使用 pre-event 特征，避免将事故结果后的信息混入模型。</li>
+    <li>原始数据、处理后主表、训练模型和逐行误差文件不会上传到 GitHub。</li>
+  </ul>
 
-    function setThemeButtonText() {
-      const isZh = (localStorage.getItem('manual_lang') || 'zh') === 'zh';
-      const isLight = document.body.classList.contains('light');
-      if (isZh) {
-        btnTheme.textContent = isLight ? '夜间模式' : '日间模式';
-      } else {
-        btnTheme.textContent = isLight ? 'Dark Mode' : 'Light Mode';
-      }
-    }
+  <h2>3. 方法</h2>
+  <p>
+    项目比较 Logistic Regression、Random Forest 与 balanced HistGradientBoosting。
+    模型选择以 Macro F1 为主，因为事故严重度类别不均衡，单纯 Accuracy 容易掩盖 Fatal 与 Serious 等少数类风险。
+    同时单独报告 Fatal 召回率，用于讨论高成本漏判问题。
+  </p>
 
-    function setLang(lang) {
-      const isZh = lang === 'zh';
-      zh.classList.toggle('active', isZh);
-      en.classList.toggle('active', !isZh);
-      btnZh.classList.toggle('active', isZh);
-      btnEn.classList.toggle('active', !isZh);
-      localStorage.setItem('manual_lang', lang);
-      const t = I18N[lang];
-      pageTitle.textContent = t.pageTitle;
-      pageSubtitle.textContent = t.pageSubtitle;
-      kpi1k.textContent = t.kpi1k;
-      kpi1v.textContent = t.kpi1v;
-      kpi2k.textContent = t.kpi2k;
-      kpi2v.textContent = t.kpi2v;
-      kpi3k.textContent = t.kpi3k;
-      kpi3v.textContent = t.kpi3v;
-      kpi4k.textContent = t.kpi4k;
-      kpi4v.textContent = t.kpi4v;
-      setThemeButtonText();
-    }
+  <h2>4. 可靠性证据</h2>
+  <ul>
+    <li>分层 K 折验证用于检查重采样稳定性。</li>
+    <li>时间外推切分模拟未来部署场景。</li>
+    <li>空间分组外推用于检查地理迁移风险。</li>
+    <li>泄漏检查用于确认高风险后验特征没有进入默认 pre-event 模型。</li>
+    <li>校准和阈值分析用于解释 Fatal 筛查时概率与召回之间的取舍。</li>
+  </ul>
 
-    function setTheme(theme) {
-      const isLight = theme === 'light';
-      document.body.classList.toggle('light', isLight);
-      localStorage.setItem('manual_theme', theme);
-      setThemeButtonText();
-    }
+  <h2>5. 主要局限</h2>
+  <ul>
+    <li>当前项目是预测建模，不是因果推断。</li>
+    <li>当前模型不是可直接部署的公共安全系统。</li>
+    <li>天气外部补充覆盖有限，OSM、空气质量和 IMD 仍是后续扩展。</li>
+    <li>模型仍需要更强的暴露量校正、空间验证和道路网络特征。</li>
+  </ul>
 
-    btnZh.addEventListener('click', () => setLang('zh'));
-    btnEn.addEventListener('click', () => setLang('en'));
-    btnTheme.addEventListener('click', () => {
-      const next = document.body.classList.contains('light') ? 'dark' : 'light';
-      setTheme(next);
-    });
+  <h2>6. 后续研究路线</h2>
+  <p>
+    适合进一步扩展的方向包括：暴露量校正风险建模、道路网络分组验证、地理公平性误差分析、
+    更丰富的基础设施特征，以及在政策干预数据允许时引入因果识别设计。
+  </p>
 
-    setLang(localStorage.getItem('manual_lang') || 'zh');
-    setTheme(localStorage.getItem('manual_theme') || 'dark');
-  </script>
+  <h2>7. 项目价值</h2>
+  <p>
+    对招聘者而言，本项目展示了从数据工程、建模、评估到公开发布的完整能力。
+    对研究场景而言，它展示了对数据泄漏、类别不平衡、时间/空间外推和模型局限的基本学术判断。
+  </p>
+</main>
 </body>
 </html>

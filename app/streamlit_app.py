@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import joblib
 import pandas as pd
@@ -9,25 +10,31 @@ import streamlit as st
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-MODEL_PATH = ROOT_DIR / "artifacts" / "model.joblib"
-METRICS_PATH = ROOT_DIR / "artifacts" / "metrics.json"
-METRICS_CV_PATH = ROOT_DIR / "artifacts" / "metrics_cv.json"
-MODEL_COMPARE_PATH = ROOT_DIR / "artifacts" / "model_compare.csv"
-ERROR_CASES_PATH = ROOT_DIR / "artifacts" / "error_cases.csv"
-FEATURE_IMPORTANCE_PATH = ROOT_DIR / "artifacts" / "feature_importance.csv"
-PERMUTATION_IMPORTANCE_PATH = ROOT_DIR / "artifacts" / "permutation_importance.csv"
-DATA_QUALITY_REPORT_PATH = ROOT_DIR / "artifacts" / "data_quality_report.json"
-LEAKAGE_REPORT_PATH = ROOT_DIR / "artifacts" / "leakage_check_report.json"
-THRESHOLD_REPORT_PATH = ROOT_DIR / "artifacts" / "threshold_report.csv"
-CALIBRATION_REPORT_PATH = ROOT_DIR / "artifacts" / "calibration_report.json"
-SEARCH_REPORT_PATH = ROOT_DIR / "artifacts" / "hyperparameter_search.json"
-ABLATION_PATH = ROOT_DIR / "artifacts" / "ablation_leakage.csv"
-MISSINGNESS_BY_TIME_PATH = ROOT_DIR / "artifacts" / "missingness_by_time.csv"
+ARTIFACTS_DIR = ROOT_DIR / "artifacts"
 FIGURES_DIR = ROOT_DIR / "reports" / "figures"
+MODEL_PATH = ARTIFACTS_DIR / "model.joblib"
+
+
+def artifact_path(name: str) -> Path:
+    return ARTIFACTS_DIR / name
+
+
+@st.cache_data
+def load_json(path: Path) -> dict[str, Any] | list[Any] | None:
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+@st.cache_data
+def load_csv(path: Path) -> pd.DataFrame:
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_csv(path)
 
 
 @st.cache_resource
-def load_model_payload():
+def load_model_payload() -> tuple[dict[str, Any] | None, str | None]:
     if not MODEL_PATH.exists():
         return None, None
     try:
@@ -36,786 +43,383 @@ def load_model_payload():
         return None, str(exc)
 
 
-@st.cache_data
-def load_metrics():
-    if not METRICS_PATH.exists():
-        return None
-    return json.loads(METRICS_PATH.read_text(encoding="utf-8"))
+def fmt(value: Any, digits: int = 3, default: str = "N/A") -> str:
+    if value is None:
+        return default
+    try:
+        return f"{float(value):.{digits}f}"
+    except (TypeError, ValueError):
+        return str(value)
 
 
-@st.cache_data
-def load_metrics_cv():
-    if not METRICS_CV_PATH.exists():
-        return None
-    return json.loads(METRICS_CV_PATH.read_text(encoding="utf-8"))
+def t(lang: str, en: str, zh: str) -> str:
+    return zh if lang == "中文" else en
 
 
-@st.cache_data
-def load_preview_data(dataset_used: str | None):
-    if not dataset_used:
-        return pd.DataFrame(), "N/A"
-    path = Path(dataset_used)
-    if not path.exists():
-        return pd.DataFrame(), str(path)
-    if path.suffix.lower() == ".parquet":
-        df = pd.read_parquet(path)
-    else:
-        df = pd.read_csv(path, low_memory=False)
-    return df, str(path)
+def render_metric_row(lang: str, metrics: dict[str, Any] | None) -> None:
+    if not metrics:
+        st.warning(t(lang, "No public metrics artifact found.", "未找到公开指标文件。"))
+        return
+    selected_metrics = metrics.get("overall_metrics_on_test_split", {})
+    safety_metrics = metrics.get("safety_metrics_on_test_split", {})
+    cols = st.columns(5)
+    cols[0].metric(t(lang, "Rows", "样本数"), f"{int(metrics.get('rows_total', 0)):,}")
+    cols[1].metric(t(lang, "Model", "模型"), metrics.get("selected_model", "N/A"))
+    cols[2].metric(t(lang, "Accuracy", "准确率"), fmt(selected_metrics.get("accuracy")))
+    cols[3].metric(t(lang, "Macro F1", "宏平均F1"), fmt(selected_metrics.get("f1_macro")))
+    cols[4].metric(t(lang, "Fatal Recall", "Fatal召回率"), fmt(safety_metrics.get("fatal_recall")))
 
 
-@st.cache_data
-def load_model_comparison():
-    if MODEL_COMPARE_PATH.exists():
-        return pd.read_csv(MODEL_COMPARE_PATH)
-    return pd.DataFrame()
+def render_explainer(lang: str, title_en: str, title_zh: str, body_en: str, body_zh: str) -> None:
+    st.markdown(f"### {t(lang, title_en, title_zh)}")
+    st.markdown(t(lang, body_en, body_zh))
 
 
-@st.cache_data
-def load_error_cases():
-    if ERROR_CASES_PATH.exists():
-        return pd.read_csv(ERROR_CASES_PATH)
-    return pd.DataFrame()
+def render_json_expander(lang: str, label_en: str, label_zh: str, data: Any) -> None:
+    if data is None or data == {}:
+        return
+    with st.expander(t(lang, label_en, label_zh), expanded=False):
+        st.json(data)
 
 
-@st.cache_data
-def load_feature_importance():
-    if FEATURE_IMPORTANCE_PATH.exists():
-        return pd.read_csv(FEATURE_IMPORTANCE_PATH)
-    return pd.DataFrame()
-
-
-@st.cache_data
-def load_permutation_importance():
-    if PERMUTATION_IMPORTANCE_PATH.exists():
-        return pd.read_csv(PERMUTATION_IMPORTANCE_PATH)
-    return pd.DataFrame()
-
-
-@st.cache_data
-def load_json_if_exists(path: Path):
-    if path.exists():
-        return json.loads(path.read_text(encoding="utf-8"))
-    return None
-
-
-@st.cache_data
-def load_threshold_report():
-    if THRESHOLD_REPORT_PATH.exists():
-        return pd.read_csv(THRESHOLD_REPORT_PATH)
-    return pd.DataFrame()
-
-
-@st.cache_data
-def load_missingness_by_time():
-    if MISSINGNESS_BY_TIME_PATH.exists():
-        return pd.read_csv(MISSINGNESS_BY_TIME_PATH)
-    return pd.DataFrame()
-
-
-@st.cache_data
-def load_ablation():
-    if ABLATION_PATH.exists():
-        return pd.read_csv(ABLATION_PATH)
-    return pd.DataFrame()
-
-
-FEATURE_LABELS_ZH = {
-    "number_of_vehicles": "车辆数量",
-    "number_of_casualties": "伤亡人数",
-    "hour": "小时",
-    "day_of_week": "星期几",
-    "month": "月份",
-    "is_weekend": "是否周末",
-    "season": "季节编码",
-    "cloud_cover": "云量",
-    "sunshine": "日照时长",
-    "global_radiation": "总辐射",
-    "max_temp": "最高温",
-    "mean_temp": "平均温",
-    "min_temp": "最低温",
-    "precipitation": "降水量",
-    "pressure": "气压",
-    "snow": "是否降雪",
-    "hour_peak": "高峰时段标记",
-    "precipitation_peak_interaction": "降水与高峰交互项",
-    "low_visibility_proxy": "低能见度代理变量",
-}
-
-
-def _translate_observation_to_zh(text: str) -> str:
-    mapping = [
-        ("No error cases on this split", "本次切分下未出现误差样本"),
-        ("Current metrics should be treated as baseline evidence rather than final performance", "当前指标应视为基线证据，不应视为最终上限"),
-        ("Larger data and stricter time-based evaluation are required before strong claims", "在进行较强结论前，仍需更大样本和更严格的时间外推验证"),
-        ("Error cases are concentrated in", "误差样本集中在"),
-        ("Most variable features among errors are", "误差样本中波动较大的特征包括"),
-        ("Fatal vs serious boundary remains the highest-risk confusion zone", "Fatal 与 Serious 的边界仍是高风险混淆区域"),
-    ]
-    for en, zh in mapping:
-        if text.startswith(en):
-            return text.replace(en, zh)
-    return text
-
-
-def _safe_image(path: Path, caption: str):
+def safe_image(path: Path, caption: str) -> None:
     if path.exists():
         st.image(str(path), caption=caption, use_container_width=True)
-        return True
-    return False
 
 
-def _render_module_explainer(section_key: str, t):
-    explainers = {
-        "overview": t(
-            """
-            **Project scope**
-            - The project studies whether weather and road context can support severity classification in three levels `Slight` `Serious` `Fatal`.
-            - Each row represents one collision context. The model learns repeated patterns across many observations.
-            - The work is predictive rather than causal. Prediction estimates risk level while causality tests direct mechanism.
-            - Results are designed for risk communication and decision support in early analysis.
-            """,
-            """
-            **项目范围**
-            - 本项目关注一个核心问题。天气与道路信息是否能够支持事故严重度三级分类 `Slight` `Serious` `Fatal`。
-            - 每一行数据对应一次事故场景。模型从大量场景中提取可重复规律。
-            - 研究定位为预测分析，不是因果识别。预测用于估计风险水平，因果用于验证直接作用机制。
-            - 输出主要服务于风险沟通与早期决策支持。
-            """,
-        ),
-        "data": t(
-            """
-            **Data preparation logic**
-            - The first step checks whether key fields are complete and structurally valid, including date, time, and severity label.
-            - The second step reviews potential explanatory signals such as precipitation, pressure, temperature, and vehicle related counts.
-            - Variables with high missingness or leakage risk are marked for cautious use.
-            - Leakage means training data contains hidden answer-like information and can lead to unrealistically high scores.
-            """,
-            """
-            **数据准备逻辑**
-            - 首先检查关键字段是否齐全且格式有效，重点包括日期、时间与严重度标签。
-            - 然后筛查可解释风险的候选变量，例如降水、气压、温度与车辆相关计数。
-            - 对高缺失字段与潜在泄漏字段进行标记，避免直接进入训练。
-            - 泄漏指训练阶段混入近似答案的信息，常会造成不真实的高分表现。
-            """,
-        ),
-        "quality": t(
-            """
-            **Data quality evidence**
-            - Abnormal target codes such as `-10` are removed before modeling to reduce label noise.
-            - Feature level missing rates are reported to reveal potential uncertainty in downstream estimates.
-            - Cleaning actions are tracked with explicit counts so the process remains auditable and reproducible.
-            - This module defines the reliability baseline for all later model conclusions.
-            """,
-            """
-            **数据质量证据**
-            - 建模前先剔除异常标签，例如 `-10`，以降低标签噪声对模型方向的干扰。
-            - 按特征给出缺失率，帮助识别后续估计中的不确定来源。
-            - 所有清洗动作均保留数量记录，流程可以追溯，也便于复现。
-            - 该模块决定了后续模型结论的可信下限。
-            """,
-        ),
-        "performance": t(
-            """
-            **Performance interpretation**
-            - Multiple models are compared under the same setting to support transparent selection.
-            - Accuracy reflects overall correctness. Macro F1 reflects balanced performance across classes and protects minority outcomes.
-            - Confusion matrix and feature influence plots are used to interpret error structure and decision pattern.
-            - Reported values are treated as full master table evidence with controlled claims.
-            """,
-            """
-            **模型表现解读**
-            - 在相同条件下比较多个模型，再进行选择，避免单模型偏见。
-            - Accuracy反映整体正确率。Macro F1反映类别均衡表现，对少数类更敏感。
-            - 结合混淆矩阵和特征影响图，可定位误差结构并解释模型判别路径。
-            - 当前结果属于完整主表证据，结论保持克制，不做外推夸大。
-            """,
-        ),
-        "reliability": t(
-            """
-            **Reliability checks**
-            - Single split performance can be unstable. K-fold validation measures repeatability under resampling.
-            - Time based holdout simulates practical deployment by training on earlier data and testing on later periods.
-            - Fatal class recall is reported separately because false negatives in high severity events carry larger risk.
-            - This module focuses on stability and transferability rather than peak score only.
-            """,
-            """
-            **可靠性检验**
-            - 单次切分结果可能受随机性影响。K折验证用于评估重采样条件下的稳定程度。
-            - 时间外推切分用于模拟真实部署，采用过去训练、未来测试的方式。
-            - Fatal类召回率单独报告，因为高严重度漏检具有更高风险成本。
-            - 本模块强调稳定性与可迁移性，而不仅是单点高分。
-            """,
-        ),
-        "error": t(
-            """
-            **Error analysis purpose**
-            - Misclassified samples are listed to locate concrete failure patterns.
-            - Environmental and traffic context around errors is examined to identify recurring difficulty zones.
-            - Findings are translated into actionable improvements in feature design and data enrichment.
-            - This module connects model diagnosis with the next round of iteration.
-            """,
-            """
-            **误差分析目的**
-            - 列出误判样本，定位模型失败的具体模式。
-            - 结合天气与交通上下文观察误差是否在特定场景中反复出现。
-            - 将诊断结论转化为可执行改进，包括特征重构与数据补全。
-            - 本模块用于把模型问题连接到下一轮迭代动作。
-            """,
-        ),
-        "predict": t(
-            """
-            **Scenario prediction use**
-            - This page serves as an interactive sandbox for single case inference.
-            - Controlled one factor changes help reveal directional sensitivity of model outputs.
-            - Full probability distribution should be read together with top class label.
-            - The module is intended for demonstration, explanation, and preliminary assessment.
-            """,
-            """
-            **情景预测用途**
-            - 本页提供单样本推断沙盒，用于观察输入变化后的输出响应。
-            - 采用单因素逐步调整，更容易识别变量对结果的方向性影响。
-            - 除Top类别外，还应结合完整概率分布进行风险阅读。
-            - 该模块用于演示解释与初步评估，不直接替代现场决策。
-            """,
-        ),
-        "limits": t(
-            """
-            **Limitations and roadmap**
-            - Boundaries of current evidence are stated explicitly to prevent over interpretation.
-            - Known gaps include limited coverage, limited spatiotemporal granularity, and partial external data linkage.
-            - Next steps are defined as executable tasks with clear validation targets.
-            - Transparent reporting of limits improves credibility and practical value.
-            """,
-            """
-            **局限与路线**
-            - 先明确现有证据边界，避免结论超出数据支持范围。
-            - 当前短板包括覆盖范围有限、时空粒度不足、外部数据接入不完整。
-            - 下一步以可执行任务形式展开，并配套可检验的结果目标。
-            - 透明呈现局限可提升项目可信度与应用价值。
-            """,
-        ),
+def make_public_observations(metrics: dict[str, Any] | None, lang: str) -> list[str]:
+    if not metrics:
+        return []
+    observations = metrics.get("error_analysis_observations", [])
+    if lang == "English":
+        return observations
+    mapping = {
+        "Error cases are concentrated in": "误差样本集中在",
+        "Most variable features among errors are": "误差样本中波动较大的特征包括",
+        "Fatal vs serious boundary remains the highest-risk confusion zone.": "Fatal 与 Serious 的边界仍是高风险混淆区域。",
     }
-    st.info(explainers.get(section_key, ""))
-
-
-def _render_figure_explainer(figure_key: str, t):
-    explainers = {
-        "model_comparison": t(
-            """
-            **Reading guide**
-            - Horizontal axis shows model names. Vertical axis shows evaluation scores.
-            - Accuracy indicates overall correctness. Macro F1 indicates balance across classes.
-            - When Accuracy is close, higher Macro F1 usually means better treatment of minority classes.
-            - The chart supports model selection with visible tradeoff evidence.
-            """,
-            """
-            **读图说明**
-            - 横轴为模型名称，纵轴为评估得分。
-            - Accuracy代表整体正确率。Macro F1代表类别均衡表现。
-            - 当Accuracy接近时，Macro F1更高通常意味着对少数类更稳健。
-            - 该图用于展示选模过程中的权衡依据。
-            """,
-        ),
-        "confusion_matrix": t(
-            """
-            **Reading guide**
-            - Diagonal cells represent correct predictions. Off diagonal cells represent class confusion.
-            - `Fatal` predicted as non-fatal is a key risk signal because it reflects high cost misses.
-            - Rows with heavy off diagonal counts indicate classes that remain difficult for the model.
-            - The matrix helps prioritize targeted data and feature improvement.
-            """,
-            """
-            **读图说明**
-            - 对角线表示预测正确，非对角线表示类别混淆。
-            - `Fatal`被预测为非Fatal属于高风险漏判，需重点关注。
-            - 某一行非对角线计数较高，说明该真实类别识别难度较大。
-            - 该图可用于确定优先补强的数据与特征方向。
-            """,
-        ),
-        "feature_importance": t(
-            """
-            **Reading guide**
-            - Higher value means stronger contribution to model decision rules.
-            - Feature importance is not causal proof. It reflects predictive usefulness under current model structure.
-            - Top features should be checked against domain knowledge for plausibility.
-            - The ranking supports prioritization in feature engineering and data collection.
-            """,
-            """
-            **读图说明**
-            - 数值越高表示该特征对模型判别规则贡献越大。
-            - 特征重要性不等于因果结论。其含义是当前模型下的预测贡献度。
-            - 需要结合交通领域常识检验结果是否合理。
-            - 该排序可用于特征工程与数据补全的优先级安排。
-            """,
-        ),
-    }
-    st.caption(explainers.get(figure_key, ""))
-
-
-def _render_story_transition(section_key: str, t):
-    transitions = {
-        "overview": t(
-            "The next section turns from research question to available evidence in raw data.",
-            "下一部分从研究问题进入原始数据证据。",
-        ),
-        "data": t(
-            "After data structure is confirmed, quality checks become the necessary next step.",
-            "确认数据结构后，下一步进入数据质量检验。",
-        ),
-        "quality": t(
-            "With cleaned data in place, model comparison and evaluation can proceed.",
-            "完成清洗后，进入模型比较与评估阶段。",
-        ),
-        "performance": t(
-            "Performance scores are followed by reliability tests to examine repeatability.",
-            "分数结果之后，需要通过可靠性检验评估可复现性。",
-        ),
-        "reliability": t(
-            "Reliability findings lead naturally to error analysis and targeted diagnosis.",
-            "可靠性结果之后，进入误差分析与定向诊断。",
-        ),
-        "error": t(
-            "After diagnosis of errors, case based prediction is used for scenario demonstration.",
-            "误差诊断完成后，进入案例化情景预测演示。",
-        ),
-        "predict": t(
-            "The final section summarizes evidence limits and defines the next implementation targets.",
-            "最后总结证据边界，并给出下一步执行目标。",
-        ),
-    }
-    text = transitions.get(section_key)
-    if text:
-        st.markdown(f"> {text}")
+    translated: list[str] = []
+    for item in observations:
+        text = item
+        for en, zh in mapping.items():
+            if text.startswith(en):
+                text = text.replace(en, zh)
+        translated.append(text)
+    return translated
 
 
 def main() -> None:
-    def t(en: str, zh: str) -> str:
-        return zh if lang == "中文" else en
-
     st.set_page_config(
-        page_title="DfT/STATS19 Road Severity Explorer",
+        page_title="Road Collision Severity Risk Modeling",
         page_icon=":bar_chart:",
         layout="wide",
     )
+
     lang = st.sidebar.selectbox("Language / 语言", ["English", "中文"], index=0)
-    st.title(t("DfT/STATS19 Road Collision Severity Project", "DfT/STATS19 交通事故严重度预测项目"))
+
+    metrics = load_json(artifact_path("metrics.json"))
+    metrics_cv = load_json(artifact_path("metrics_cv.json"))
+    data_quality = load_json(artifact_path("data_quality_report.json"))
+    leakage = load_json(artifact_path("leakage_check_report.json"))
+    calibration = load_json(artifact_path("calibration_report.json"))
+    model_compare = load_csv(artifact_path("model_compare.csv"))
+    feature_importance = load_csv(artifact_path("feature_importance.csv"))
+    permutation_importance = load_csv(artifact_path("permutation_importance.csv"))
+    threshold_report = load_csv(artifact_path("threshold_report.csv"))
+    missingness_by_time = load_csv(artifact_path("missingness_by_time.csv"))
+    ablation = load_csv(artifact_path("ablation_leakage.csv"))
+    payload, model_error = load_model_payload()
+
+    st.title(t(lang, "Road Collision Severity Risk Modeling", "交通事故严重度风险建模"))
     st.caption(
         t(
-            "Full master table research: data quality, model comparison, and deployment.",
-            "完整主表研究，重点展示数据治理、模型比较与在线部署。",
+            lang,
+            "A recruiter-friendly applied ML case study with research-grade reliability checks.",
+            "面向求职展示的应用型机器学习案例，同时保留研究级可靠性检验。",
         )
     )
-
-    payload, model_load_error = load_model_payload()
-    metrics = load_metrics()
-    metrics_cv = load_metrics_cv()
-    model_compare_df = load_model_comparison()
-    error_cases_df = load_error_cases()
-    feature_importance_df = load_feature_importance()
-    permutation_importance_df = load_permutation_importance()
-    data_quality_report = load_json_if_exists(DATA_QUALITY_REPORT_PATH)
-    leakage_report = load_json_if_exists(LEAKAGE_REPORT_PATH)
-    calibration_report = load_json_if_exists(CALIBRATION_REPORT_PATH)
-    search_report = load_json_if_exists(SEARCH_REPORT_PATH)
-    threshold_df = load_threshold_report()
-    missingness_by_time_df = load_missingness_by_time()
-    ablation_df = load_ablation()
-    dataset_used = metrics.get("dataset_used") if metrics else None
-    preview_df, preview_path = load_preview_data(dataset_used)
-
-    if model_load_error:
-        st.error(
-            t(
-                "Model artifact could not be loaded. This is often a Python-version mismatch issue on cloud. ",
-                "模型文件加载失败，这通常与云端 Python 版本不一致有关。"
-            )
-            + f"\n\nDetails: {model_load_error}"
-        )
-
-    selected_model = metrics.get("selected_model", "N/A") if metrics else "N/A"
-    rows_total = int(metrics.get("rows_total", 0)) if metrics else 0
-    rows_used = int(metrics.get("rows_used_for_training", 0)) if metrics else 0
-    rows_removed = int(metrics.get("rows_removed_invalid_target", 0)) if metrics else 0
-    k1, k2, k3, k4 = st.columns(4)
-    k1.metric(t("Rows total", "总样本数"), rows_total)
-    k2.metric(t("Rows used", "训练使用样本"), rows_used)
-    k3.metric(t("Invalid target removed", "剔除异常标签"), rows_removed)
-    k4.metric(t("Best model", "最佳模型"), selected_model)
+    render_metric_row(lang, metrics if isinstance(metrics, dict) else None)
 
     tabs = st.tabs(
         [
-            "Overview",
-            t("Data", "数据"),
-            t("Data Quality", "数据质量"),
-            t("Model Performance", "模型表现"),
-            t("Reliability", "可靠性"),
-            t("Error Analysis", "误差分析"),
-            t("Predict", "预测"),
-            t("Limitations & Next Step", "局限与下一步"),
+            t(lang, "Brief", "项目概览"),
+            t(lang, "Data & Features", "数据与特征"),
+            t(lang, "Model Evidence", "模型证据"),
+            t(lang, "Reliability & Risk", "可靠性与风险"),
+            t(lang, "Research Notes", "研究说明"),
         ]
     )
 
     with tabs[0]:
-        st.subheader(t("Problem Story", "项目主线"))
-        _render_module_explainer("overview", t)
-        _render_story_transition("overview", t)
-        st.markdown(
+        render_explainer(
+            lang,
+            "Project in 60 seconds",
+            "一分钟读懂项目",
+            """
+            This project predicts whether a road collision is likely to be `Fatal`, `Serious`, or `Slight` using pre-event road,
+            temporal, and environment signals from STATS19-style data. The goal is not to claim a deployable safety product, but
+            to show an end-to-end workflow: data governance, feature policy, model comparison, reliability checks, and honest limitations.
+            """,
+            """
+            本项目使用事故发生前可获得的道路、时间与环境信息，预测交通事故严重度等级：`Fatal`、`Serious`、`Slight`。
+            它不是一个可直接部署的公共安全系统，而是一个完整工作流展示：数据治理、特征策略、模型比较、可靠性检验和诚实局限。
+            """,
+        )
+        if isinstance(metrics, dict):
+            selected = metrics.get("selected_model", "N/A")
+            screening = metrics.get("fatal_screening_model", {})
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown(t(lang, "#### What I built", "#### 我构建了什么"))
+                st.markdown(
+                    t(
+                        lang,
+                        """
+                        - reproducible data-build and training commands
+                        - pre-event feature policy to reduce leakage
+                        - model comparison across interpretable and tree-based models
+                        - validation evidence across resampling, time, and geography
+                        - public-release audit to avoid data/model leakage on GitHub
+                        """,
+                        """
+                        - 可复现的数据构建与训练命令
+                        - 默认使用事故发生前特征，降低信息泄漏风险
+                        - 比较可解释基线模型与树模型
+                        - 通过重采样、时间与空间切分验证稳定性
+                        - 发布审计脚本，避免数据和模型泄漏到 GitHub
+                        """,
+                    )
+                )
+            with c2:
+                st.markdown(t(lang, "#### Current evidence", "#### 当前证据"))
+                st.markdown(
+                    t(
+                        lang,
+                        f"""
+                        - Balanced research model: `{selected}`
+                        - Fatal screening model: `{screening.get('model_name', 'N/A')}`
+                        - Public artifact tag: `{metrics.get('data_version_tag', 'unknown')}`
+                        - Feature set: `{metrics.get('feature_set_mode', 'unknown')}`
+                        """,
+                        f"""
+                        - 均衡研究模型：`{selected}`
+                        - Fatal 筛查模型：`{screening.get('model_name', 'N/A')}`
+                        - 公开产物标签：`{metrics.get('data_version_tag', 'unknown')}`
+                        - 特征集合：`{metrics.get('feature_set_mode', 'unknown')}`
+                        """,
+                    )
+                )
+        st.info(
             t(
-                """
-                - **City context** Road-collision severity is a key public-safety signal.
-                - **Data challenge** Real-world labels include invalid values such as `-10`, so cleaning decisions matter.
-                - **Modeling decision** Baseline and tree models are compared, and **Macro F1** is used to preserve minority class visibility.
-                - **Deployment outcome** The demo is online and reproducible with GitHub and Streamlit.
-                - **Current dataset status** The latest run is based on an integrated 5-year DfT table with weather and holiday enrichment.
-                - **Evidence chain** Data governance files, reliability reports, threshold analysis, and calibration diagnostics are linked in each module.
-                """,
-                """
-                - **城市问题** 交通事故严重度是公共安全的重要信号。
-                - **数据挑战** 原始标签中存在异常值，例如 `-10`，因此必须先清洗再建模。
-                - **建模决策** 采用多模型比较，并以 **Macro F1** 作为关键指标，避免少数类被忽视。
-                - **交付结果** 项目可通过 GitHub 与 Streamlit 在线复现和展示。
-                - **数据状态** 最新运行基于 DfT 近五年整合主表，并补充天气与节假日信息。
-                - **证据链条** 数据治理、可靠性、阈值与校准报告都已在对应模块挂载。
-                """,
+                lang,
+                "Read this as baseline decision-support research, not as a finished traffic-safety deployment.",
+                "请将本项目理解为基线级决策支持研究，而不是已经完成的交通安全部署系统。",
             )
         )
-        if metrics:
-            st.info(
-                t(
-                    f"Performance note: **{metrics.get('performance_note', 'full master table performance')}**",
-                    f"结果说明 **{metrics.get('performance_note', 'full master table performance')}**",
-                )
-            )
-            st.subheader(t("Version & Evidence", "版本与证据"))
-            st.json(
-                {
-                    "data_version_tag": metrics.get("data_version_tag", "unknown"),
-                    "label_mapping_version": metrics.get("label_mapping_version", "unknown"),
-                    "feature_set_mode": metrics.get("feature_set_mode", "unknown"),
-                    "dataset_used": metrics.get("dataset_used", "unknown"),
-                }
-            )
 
     with tabs[1]:
-        st.subheader(t("Dataset Preview", "数据预览"))
-        _render_module_explainer("data", t)
-        _render_story_transition("data", t)
-        if preview_df.empty:
-            st.warning(t("Dataset preview not available.", "当前数据预览不可用。"))
-        else:
-            st.markdown(
-                t(
-                    "**Step evidence** This preview is used for schema and measurement sanity-check before feature engineering.",
-                    "**步骤证据** 此预览用于特征工程前的结构与测量合理性校验。",
-                )
-            )
-            st.dataframe(preview_df.head(20), use_container_width=True)
-            st.write(t(f"Rows {len(preview_df)}", f"数据行数 {len(preview_df)}"))
-            st.caption(t(f"Preview source {preview_path}", f"预览来源 {preview_path}"))
-        st.markdown(
-            t(
-                """
-                **Data sources**
-                - UK DfT road safety open data, validated 2020 to 2024 collisions vehicles casualties, Great Britain coverage.
-                - London weather data from Kaggle public dataset, used as external daily meteorological enrichment with limited join coverage.
-                - UK bank holidays from GOV.UK JSON API, England and Wales calendar events.
-                - Core modeling table uses the complete processed STATS19 master table with temporal coverage 2020-01-01 to 2024-12-31.
-                """,
-                """
-                **数据来源**
-                - 英国 DfT 道路安全公开数据，使用 2020 至 2024 年已验证的碰撞、车辆、伤亡三表，空间范围为大不列颠。
-                - 伦敦天气数据来自 Kaggle 公开数据集，作为外部按日气象补充使用，但当前合并覆盖有限。
-                - 英国法定节假日来自 GOV.UK JSON 接口，使用 England and Wales 事件日历。
-                - 核心建模表使用完整处理后的 STATS19 主表，时间覆盖为 2020-01-01 至 2024-12-31。
-                """,
-            )
+        render_explainer(
+            lang,
+            "Data scope and feature policy",
+            "数据范围与特征策略",
+            """
+            The core modeling table comes from UK DfT STATS19 collision, vehicle, and casualty records. London weather is only a
+            limited external enrichment source and does not define the study area. The default model uses pre-event features so the
+            task remains closer to prospective risk screening.
+            """,
+            """
+            核心建模表来自英国 DfT STATS19 的事故、车辆与伤亡记录。伦敦天气只是覆盖有限的外部补充来源，并不定义研究空间范围。
+            默认模型使用事故发生前可获得的特征，使任务更接近前瞻性风险筛查。
+            """,
         )
-        st.markdown(
-            t(
-                """
-                **Repository availability note**
-                - Some raw and processed files are intentionally not uploaded to GitHub.
-                - Main reasons are GitHub file-size limits and repository portability.
-                - Local-only files include `data/raw/*.csv`, `data/processed/*.parquet`, and oversized model binaries generated from full-data training.
-                """,
-                """
-                **仓库可见性说明**
-                - 部分原始数据与处理后数据不会上传到 GitHub 公共仓库。
-                - 主要原因是 GitHub 文件大小限制，以及仓库可移植性要求。
-                - 本地保留文件包括 `data/raw/*.csv`、`data/processed/*.parquet`，以及全量训练产生的超大模型二进制文件。
-                """,
-            )
+        st.markdown(t(lang, "#### Feature groups", "#### 特征分组"))
+        feature_groups = pd.DataFrame(
+            [
+                {"group": "Temporal", "examples": "hour, day_of_week, month, is_weekend, season, hour_peak"},
+                {"group": "Road context", "examples": "road_type, speed_limit, junction_detail, junction_control"},
+                {"group": "Environment", "examples": "light_conditions, weather_conditions, road_surface_conditions"},
+                {"group": "Weather enrichment", "examples": "precipitation, pressure, temperature, cloud_cover, sunshine"},
+                {"group": "Derived interactions", "examples": "precipitation_peak_interaction, low_visibility_proxy"},
+            ]
         )
-
-    with tabs[2]:
-        st.subheader(t("Data Quality", "数据质量"))
-        _render_module_explainer("quality", t)
-        _render_story_transition("quality", t)
-        if metrics is None:
-            st.info(t("No metrics file found. Run training first.", "未找到指标文件，请先运行训练。"))
-        else:
-            st.metric(t("Removed invalid target labels", "剔除异常目标标签"), int(metrics.get("rows_removed_invalid_target", 0)))
-            st.caption(
-                t(
-                    "Interpretation This count is a direct audit trail of label-governance strictness.",
-                    "解读 该计数可直接反映标签治理的执行强度。",
-                )
-            )
+        st.dataframe(feature_groups, use_container_width=True, hide_index=True)
+        if isinstance(metrics, dict):
             missing_rate = metrics.get("missing_rate_by_feature", {})
             if missing_rate:
-                df_missing = (
-                    pd.DataFrame(
-                        [{"feature": k, "missing_rate": v} for k, v in missing_rate.items()]
-                    )
+                missing_df = (
+                    pd.DataFrame({"feature": list(missing_rate), "missing_rate": list(missing_rate.values())})
                     .sort_values("missing_rate", ascending=False)
                     .reset_index(drop=True)
                 )
-                st.dataframe(df_missing, use_container_width=True)
-                st.caption(
-                    t(
-                        "Missing-rate is computed before imputation; high-missing features imply larger uncertainty propagation risk.",
-                        "缺失率在插补前计算；高缺失特征意味着更高的不确定性传播风险。",
-                    )
-                )
-            else:
-                st.write(t("Missing-rate details unavailable.", "缺失率明细不可用。"))
-            if data_quality_report:
-                st.markdown(t("Data quality evidence file", "数据质量证据文件"))
-                st.json(data_quality_report)
-            if not missingness_by_time_df.empty:
-                st.markdown(t("Missingness by month", "按月缺失率"))
-                st.dataframe(missingness_by_time_df.head(120), use_container_width=True)
+                st.markdown(t(lang, "#### Missingness snapshot", "#### 缺失情况快照"))
+                st.dataframe(missing_df.head(12), use_container_width=True)
+        if not missingness_by_time.empty:
+            with st.expander(t(lang, "Monthly missingness details", "按月缺失率明细")):
+                st.dataframe(missingness_by_time.head(120), use_container_width=True)
+        render_json_expander(lang, "Data quality artifact", "数据质量产物", data_quality)
+
+    with tabs[2]:
+        render_explainer(
+            lang,
+            "Model evidence, not leaderboard chasing",
+            "模型证据，而不是刷榜",
+            """
+            The project reports accuracy, Macro F1, balanced accuracy, Fatal recall, feature influence, and permutation importance.
+            Macro F1 matters because severity classes are imbalanced. Fatal recall is discussed separately because high-severity misses
+            have a larger practical cost.
+            """,
+            """
+            项目报告准确率、宏平均 F1、平衡准确率、Fatal 召回率、特征影响和置换重要性。宏平均 F1 用于避免多数类掩盖少数类。
+            Fatal 召回率单独讨论，因为高严重度漏判具有更高现实成本。
+            """,
+        )
+        if not model_compare.empty:
+            st.markdown(t(lang, "#### Model comparison", "#### 模型对比"))
+            st.dataframe(model_compare, use_container_width=True)
+            chart_cols = [c for c in ["accuracy", "f1_macro", "balanced_accuracy", "fatal_recall"] if c in model_compare.columns]
+            if chart_cols:
+                st.bar_chart(model_compare.set_index("model_name")[chart_cols], use_container_width=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            safe_image(FIGURES_DIR / "model_comparison.png", t(lang, "Model comparison", "模型对比"))
+            safe_image(FIGURES_DIR / "confusion_matrix.png", t(lang, "Confusion matrix", "混淆矩阵"))
+        with col2:
+            safe_image(FIGURES_DIR / "feature_importance.png", t(lang, "Feature influence", "特征影响"))
+            if not feature_importance.empty:
+                st.markdown(t(lang, "#### Top feature influence", "#### 主要特征影响"))
+                st.dataframe(feature_importance.head(10), use_container_width=True)
+        if not permutation_importance.empty:
+            with st.expander(t(lang, "Permutation importance evidence", "置换重要性证据")):
+                st.dataframe(permutation_importance.head(15), use_container_width=True)
+        if not ablation.empty:
+            with st.expander(t(lang, "Leakage ablation comparison", "泄漏对照实验")):
+                st.dataframe(ablation, use_container_width=True)
 
     with tabs[3]:
-        st.subheader(t("Model Comparison & Evidence", "模型对比与证据"))
-        _render_module_explainer("performance", t)
-        _render_story_transition("performance", t)
-        if metrics is None:
-            st.info(t("No metrics file found. Run training first.", "未找到指标文件，请先运行训练。"))
-        else:
-            selected = metrics.get("selected_model", "N/A")
-            st.write(t(f"Selected model **{selected}**", f"选中模型 **{selected}**"))
-            fatal_screening = metrics.get("fatal_screening_model", {})
-            if fatal_screening:
-                st.info(
-                    t(
-                        f"Fatal screening model: **{fatal_screening.get('model_name', 'N/A')}**, fatal recall {fatal_screening.get('fatal_recall', 0):.3f}.",
-                        f"Fatal 筛查模型：**{fatal_screening.get('model_name', 'N/A')}**，Fatal 召回率 {fatal_screening.get('fatal_recall', 0):.3f}。",
-                    )
-                )
-            selected_metrics = metrics.get("selected_model_metrics", {})
-            c1, c2 = st.columns(2)
-            c1.metric(t("Accuracy", "准确率"), f"{selected_metrics.get('accuracy', 0):.3f}")
-            c2.metric(t("Macro F1", "宏平均F1"), f"{selected_metrics.get('f1_macro', 0):.3f}")
-            if model_compare_df.empty:
-                all_metrics = metrics.get("all_model_metrics", [])
-                if all_metrics:
-                    model_compare_df = pd.DataFrame(
-                        [{"model_name": m["model_name"], "accuracy": m["accuracy"], "f1_macro": m["f1_macro"]} for m in all_metrics]
-                    )
-            if not model_compare_df.empty:
-                st.dataframe(model_compare_df, use_container_width=True)
-                st.bar_chart(
-                    model_compare_df.set_index("model_name")[["accuracy", "f1_macro"]],
-                    use_container_width=True,
-                )
-                _render_figure_explainer("model_comparison", t)
-            if _safe_image(FIGURES_DIR / "model_comparison.png", t("Model Comparison Figure", "模型对比图")):
-                _render_figure_explainer("model_comparison", t)
-            if _safe_image(FIGURES_DIR / "confusion_matrix.png", t("Confusion Matrix (Selected Model)", "混淆矩阵（选中模型）")):
-                _render_figure_explainer("confusion_matrix", t)
-            if _safe_image(FIGURES_DIR / "feature_importance.png", t("Feature Influence", "特征影响图")):
-                _render_figure_explainer("feature_importance", t)
-            if not feature_importance_df.empty:
-                st.markdown(t("Top feature influence table", "特征影响Top表"))
-                st.dataframe(feature_importance_df.head(10), use_container_width=True)
-            if not permutation_importance_df.empty:
-                st.markdown(t("Permutation importance", "置换重要性"))
-                st.dataframe(permutation_importance_df.head(12), use_container_width=True)
-            if search_report:
-                st.markdown(t("Hyperparameter search summary", "超参数搜索摘要"))
-                st.json(search_report)
-            if not ablation_df.empty:
-                st.markdown(t("Leakage ablation result", "泄漏对照实验结果"))
-                st.dataframe(ablation_df, use_container_width=True)
-
-    with tabs[4]:
-        st.subheader(t("Reliability Checks", "可靠性检验"))
-        _render_module_explainer("reliability", t)
-        _render_story_transition("reliability", t)
-        if metrics_cv is None:
-            st.info(t("No reliability artifact found. Run training first.", "未找到可靠性结果，请先运行训练。"))
-        else:
+        render_explainer(
+            lang,
+            "Reliability and risk checks",
+            "可靠性与风险检验",
+            """
+            A model that performs well on one split can still fail under future time periods, different places, or different thresholds.
+            This tab keeps those risks visible instead of hiding them behind a single headline score.
+            """,
+            """
+            一个模型在单次切分上表现不错，并不代表它能稳定适应未来时间、不同空间或不同阈值。本页将这些风险显式展示，
+            而不是只给一个总分。
+            """,
+        )
+        if isinstance(metrics_cv, dict):
             cv_rows = metrics_cv.get("cv", {}).get("rows", [])
             if cv_rows:
-                cv_df = pd.DataFrame(cv_rows)
-                st.markdown(t("Stratified K-Fold results", "分层K折结果"))
-                st.dataframe(cv_df, use_container_width=True)
-                st.caption(
-                    t(
-                        "Interpretation Mean and dispersion should be read together. Lower variance indicates more stable resampling behavior.",
-                        "解读 需要同时观察均值与离散程度。方差越低，重采样稳定性通常越好。",
-                    )
-                )
+                st.markdown(t(lang, "#### Stratified K-fold", "#### 分层 K 折"))
+                st.dataframe(pd.DataFrame(cv_rows), use_container_width=True)
             time_holdout = metrics_cv.get("time_holdout", {})
-            st.markdown(t("Time-based holdout (simulation of real deployment)", "时间外推切分（模拟真实部署）"))
-            if time_holdout.get("available"):
+            spatial_holdout = metrics_cv.get("spatial_holdout", {})
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown(t(lang, "#### Time holdout", "#### 时间外推"))
                 st.json(time_holdout)
-                st.caption(
-                    t(
-                        "Interpretation This split approximates future deployment. Performance degradation here has direct operational meaning.",
-                        "解读 该切分近似未来上线场景。因此这一部分的性能下降具有直接业务意义。",
-                    )
-                )
-            else:
-                st.warning(time_holdout.get("reason", t("Time holdout unavailable.", "时间外推不可用。")))
-            if metrics:
-                st.metric(t("Fatal recall (test split)", "Fatal召回率（测试集）"), f"{metrics.get('fatal_recall_on_test_split', 0):.3f}")
-                panel = metrics.get("overall_metrics_on_test_split", {})
-                if panel:
-                    st.markdown(t("Overall panel metrics", "综合面板指标"))
-                    st.json(panel)
-                safety = metrics.get("safety_metrics_on_test_split", {})
-                if safety:
-                    st.markdown(t("Safety panel metrics", "安全面板指标"))
-                    st.json(safety)
-                prob = metrics.get("probability_metrics_on_test_split", {})
-                if prob:
-                    st.markdown(t("Probability panel metrics", "概率面板指标"))
-                    st.json(prob)
-            if not threshold_df.empty:
-                st.markdown(t("Fatal threshold sensitivity", "Fatal阈值敏感性"))
-                st.dataframe(threshold_df, use_container_width=True)
-            safety_threshold = metrics.get("safety_threshold", {}) if metrics else {}
-            if safety_threshold:
-                st.markdown(t("Selected safety threshold", "选中安全阈值"))
-                st.json(safety_threshold)
-            if calibration_report:
-                st.markdown(t("Calibration report", "校准报告"))
-                st.json(calibration_report)
-            spatial_holdout = metrics_cv.get("spatial_holdout", {}) if metrics_cv else {}
-            if spatial_holdout:
-                st.markdown(t("Spatial group holdout", "空间分组外推"))
+            with c2:
+                st.markdown(t(lang, "#### Spatial holdout", "#### 空间外推"))
                 st.json(spatial_holdout)
+        if not threshold_report.empty:
+            st.markdown(t(lang, "#### Fatal threshold sensitivity", "#### Fatal 阈值敏感性"))
+            st.dataframe(threshold_report, use_container_width=True)
+        render_json_expander(lang, "Calibration report", "校准报告", calibration)
+        render_json_expander(lang, "Leakage check", "泄漏检查", leakage)
 
-    with tabs[5]:
-        st.subheader(t("Error Analysis", "误差分析"))
-        _render_module_explainer("error", t)
-        _render_story_transition("error", t)
-        if error_cases_df.empty:
-            st.warning(
+    with tabs[4]:
+        render_explainer(
+            lang,
+            "Research notes and future direction",
+            "研究说明与后续方向",
+            """
+            The strongest version of this project is not a claim that the current model is finished. It is a transparent research
+            foundation for road-safety risk modeling: reproducible data, explicit leakage control, validation evidence, and a clear
+            roadmap for stronger spatial, exposure, and causal analysis.
+            """,
+            """
+            本项目最有价值的地方不是宣称当前模型已经完成，而是提供一个透明的交通安全风险建模研究基础：可复现数据、
+            明确泄漏控制、可靠性证据，以及面向空间、暴露量和因果分析的后续路线。
+            """,
+        )
+        st.markdown(t(lang, "#### What this is not", "#### 本项目不是什么"))
+        st.markdown(
+            t(
+                lang,
+                """
+                - not causal inference
+                - not a deployment-ready public-safety system
+                - not a complete weather-fusion or road-network exposure model
+                - not a repository containing all generated data and model binaries
+                """,
+                """
+                - 不是因果推断研究
+                - 不是可直接部署的公共安全系统
+                - 不是完整天气融合或路网暴露量模型
+                - 不是包含全部生成数据和模型二进制文件的仓库
+                """,
+            )
+        )
+        st.markdown(t(lang, "#### Public error insights", "#### 公开误差观察"))
+        observations = make_public_observations(metrics if isinstance(metrics, dict) else None, lang)
+        if observations:
+            for item in observations:
+                st.write(f"- {item}")
+        else:
+            st.write(t(lang, "No public aggregate error observations available.", "暂无公开聚合误差观察。"))
+        st.markdown(t(lang, "#### Research extensions", "#### 研究扩展方向"))
+        st.markdown(
+            t(
+                lang,
+                """
+                - exposure-adjusted severity risk
+                - stronger spatial validation across road-network groups
+                - richer official road-infrastructure features
+                - geography and equity analysis of model errors
+                - causal designs for policy interventions where data permits
+                - uncertainty-aware threshold selection for high-severity screening
+                """,
+                """
+                - 加入暴露量校正后的严重度风险建模
+                - 按道路网络或地区做更强的空间验证
+                - 引入更丰富的官方道路基础设施特征
+                - 分析模型误差的地理与公平性差异
+                - 在数据允许时设计政策干预相关的因果研究
+                - 面向高严重度筛查的不确定性阈值选择
+                """,
+            )
+        )
+        if model_error:
+            st.warning(t(lang, f"Local model exists but could not be loaded: {model_error}", f"本地模型存在但无法加载：{model_error}"))
+        elif payload is None:
+            st.info(
                 t(
-                    "No error rows were written for the current split, or the error file is empty.",
-                    "当前切分未写入误判记录，或误判文件为空。",
+                    lang,
+                    "Single-row prediction is local-only because the trained model is intentionally excluded from GitHub.",
+                    "单条预测仅限本地运行，因为训练好的模型按公开发布策略不会上传到 GitHub。",
                 )
             )
         else:
-            display_cols = [
-                c
-                for c in [
-                    "actual_class_label",
-                    "predicted_class_label",
-                    "mean_temp",
-                    "precipitation",
-                    "pressure",
-                    "number_of_vehicles",
-                    "number_of_casualties",
-                ]
-                if c in error_cases_df.columns
-            ]
-            st.dataframe(error_cases_df[display_cols], use_container_width=True)
-            st.caption(
-                t(
-                    "Interpretation Each row is a traceable failure case. Recurring error patterns are usually more important than isolated outliers.",
-                    "解读 每一行都是可追踪的失败样本。与个别离群点相比，重复出现的误差模式更值得优先处理。",
-                )
-            )
-        if metrics:
-            observations = metrics.get("error_analysis_observations", [])
-            if observations:
-                st.markdown(t("Key observations", "关键观察"))
-                for item in observations:
-                    if lang == "中文":
-                        st.write(f"- {_translate_observation_to_zh(item)}")
+            with st.expander(t(lang, "Optional local single-row prediction", "可选：本地单条预测")):
+                feature_columns = payload["feature_columns"]
+                defaults = payload.get("feature_defaults", {})
+                class_labels = payload.get("class_labels", ["Fatal", "Serious", "Slight"])
+                values: dict[str, Any] = {}
+                for col in feature_columns:
+                    default = defaults.get(col, 0)
+                    if isinstance(default, str):
+                        values[col] = st.text_input(col, value=default)
                     else:
-                        st.write(f"- {item}")
-
-    with tabs[6]:
-        st.subheader(t("Single Prediction", "单条预测"))
-        _render_module_explainer("predict", t)
-        _render_story_transition("predict", t)
-        if payload is None:
-            st.info(t("No trained model found. Run `python -m src.train --config configs/default.yaml` first.", "未找到训练模型，请先运行训练命令。"))
-        else:
-            feature_columns = payload["feature_columns"]
-            defaults = payload.get("feature_defaults", {})
-            class_labels = payload.get("class_labels", ["Slight", "Serious", "Fatal"])
-            inputs = {}
-            for col in feature_columns:
-                default = float(defaults.get(col, 0.0))
-                if lang == "中文":
-                    c1, c2 = st.columns([2, 3])
-                    with c1:
-                        inputs[col] = st.number_input(col, value=default, format="%.4f")
-                    with c2:
-                        st.caption(FEATURE_LABELS_ZH.get(col, "特征说明待补充"))
-                else:
-                    inputs[col] = st.number_input(col, value=default, format="%.4f")
-
-            if st.button(t("Predict severity", "预测严重度")):
-                X = pd.DataFrame([inputs], columns=feature_columns)
-                pipeline = payload["pipeline"]
-                pred_idx = int(pipeline.predict(X)[0])
-                probs = pipeline.predict_proba(X)[0]
-                st.success(
-                    t(
-                        f"Predicted class: {class_labels[pred_idx]} (severity={pred_idx + 1})",
-                        f"预测类别 {class_labels[pred_idx]}（严重度={pred_idx + 1}）",
-                    )
-                )
-                prob_table = pd.DataFrame(
-                    {"class_label": class_labels, "probability": probs}
-                ).sort_values("probability", ascending=False)
-                st.dataframe(prob_table, use_container_width=True)
-
-    with tabs[7]:
-        st.subheader(t("Limitations", "局限"))
-        _render_module_explainer("limits", t)
-        st.markdown(
-            t(
-                """
-                - Current metrics are based on the latest integrated full-master-table run, while feature coverage still has structural gaps.
-                - External weather enrichment currently has limited join coverage, so STATS19 native weather and road fields remain important evidence.
-                - OSM, air-quality, and IMD enrichments are placeholders and are not treated as formal model evidence yet.
-                - Some large artifacts are kept local and excluded from GitHub due storage limits.
-                """,
-                """
-                - 当前指标来自最新完整主表运行，但特征覆盖仍存在结构性缺口。
-                - 外部天气补充当前合并覆盖有限，因此 STATS19 原生天气与道路字段仍是重要证据。
-                - OSM、空气质量与 IMD 补充字段仍是占位列，暂不作为正式模型证据。
-                - 部分大体量产物因仓库存储限制仅保留在本地环境。
-                """,
-            )
-        )
-        if leakage_report:
-            st.subheader(t("Leakage Check", "泄漏检查"))
-            st.json(leakage_report)
-        st.subheader(t("Next Step", "下一步"))
-        st.markdown(
-            t(
-                """
-                - Add time-window features and road/location context.
-                - Use cross-validation and class-balance strategies.
-                - Expand error analysis with full-data runs and stability checks.
-                """,
-                """
-                - 增加时间窗口和道路/空间上下文特征。
-                - 强化交叉验证与类别不平衡策略。
-                - 在全量数据上扩展误差分析与稳定性检验。
-                """,
-            )
-        )
+                        values[col] = st.number_input(col, value=float(default), format="%.4f")
+                if st.button(t(lang, "Predict severity", "预测严重度")):
+                    pipeline = payload["pipeline"]
+                    X = pd.DataFrame([values], columns=feature_columns)
+                    pred_idx = int(pipeline.predict(X)[0])
+                    probs = pipeline.predict_proba(X)[0]
+                    st.success(t(lang, f"Predicted class: {class_labels[pred_idx]}", f"预测类别：{class_labels[pred_idx]}"))
+                    st.dataframe(pd.DataFrame({"class": class_labels, "probability": probs}), use_container_width=True)
 
 
 if __name__ == "__main__":
