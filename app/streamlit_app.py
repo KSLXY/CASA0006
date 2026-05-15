@@ -134,8 +134,8 @@ def main() -> None:
     st.caption(
         t(
             lang,
-            "A recruiter-friendly applied ML case study with research-grade reliability checks.",
-            "面向求职展示的应用型机器学习案例，同时保留研究级可靠性检验。",
+            "An applied ML case study with transparent data, modeling, and reliability evidence.",
+            "一个包含数据、建模与可靠性证据的应用型机器学习案例。",
         )
     )
     render_metric_row(lang, metrics if isinstance(metrics, dict) else None)

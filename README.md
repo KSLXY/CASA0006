@@ -1,6 +1,6 @@
 # Road Collision Severity Risk Modeling
 
-Applied machine-learning case study using UK DfT STATS19 road-collision data to classify collision severity from **pre-event road, temporal, and environment signals**. The project is designed as a public GitHub portfolio project: easy to understand first, but still rigorous enough to show research judgment.
+Applied machine-learning case study using UK DfT STATS19 road-collision data to classify collision severity from **pre-event road, temporal, and environment signals**. The project presents a reproducible workflow for data preparation, feature governance, model comparison, reliability checks, and transparent limitation reporting.
 
 ## Project In 60 Seconds
 
@@ -146,9 +146,9 @@ This project can become stronger as research work by adding:
 
 ## 中文简介
 
-本项目是一个面向公开展示的交通事故严重度建模案例。核心目标是基于英国 DfT STATS19 数据，使用事故发生前可获得的道路、时间与环境信息，预测事故严重度等级，并用交叉验证、时间外推、空间外推、阈值分析、校准和泄漏检查来说明结果可信度。
+本项目是一个交通事故严重度建模案例。核心目标是基于英国 DfT STATS19 数据，使用事故发生前可获得的道路、时间与环境信息，预测事故严重度等级，并用交叉验证、时间外推、空间外推、阈值分析、校准和泄漏检查来说明结果可信度。
 
-项目优先服务于求职作品集展示：读者能快速理解问题、数据、方法、结果和局限。同时保留研究严谨性，为未来博士申请或进一步研究扩展打基础。
+项目重点呈现一个清晰、可复现且边界明确的应用型机器学习研究流程：问题定义、数据来源、建模方法、可靠性证据、局限与后续研究方向。
 
 本仓库不上传原始数据、处理后主表、训练模型或逐行误差文件。公开仓库只保留代码、配置、测试、聚合指标、图表和说明文档。
 
