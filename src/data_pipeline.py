@@ -17,16 +17,11 @@ class PreparedDataset:
     missing_rate_by_feature: dict[str, float]
 
 
-def load_dataset(data_path: str | Path, fallback_path: str | Path | None = None) -> pd.DataFrame:
+def load_dataset(data_path: str | Path) -> pd.DataFrame:
     data_path = Path(data_path).expanduser().resolve()
     chosen = data_path
     if not chosen.exists():
-        if fallback_path is None:
-            raise FileNotFoundError(f"Dataset not found: {chosen}")
-        fallback = Path(fallback_path).expanduser().resolve()
-        if not fallback.exists():
-            raise FileNotFoundError(f"Dataset not found: {chosen}; fallback not found: {fallback}")
-        chosen = fallback
+        raise FileNotFoundError(f"Master dataset not found: {chosen}")
 
     suffix = chosen.suffix.lower()
     if suffix == ".parquet":
@@ -132,11 +127,9 @@ def prepare_dataset(
 
     dates = pd.to_datetime(valid.get("date", pd.NaT), errors="coerce")
     spatial_keys = valid.get("spatial_key", pd.Series(["unknown"] * len(valid), index=valid.index)).astype(str)
-    X = valid[feature_columns].apply(pd.to_numeric, errors="coerce")
+    X = valid[feature_columns].copy()
     missing_rate_by_feature = X.isna().mean().fillna(0).to_dict()
     X = X.replace([np.inf, -np.inf], np.nan)
-    medians = X.median(numeric_only=True)
-    X = X.fillna(medians)
 
     mapping = severity_code_map or {1: 0, 2: 1, 3: 2}
     y = valid[target_column].astype(int).map(mapping)

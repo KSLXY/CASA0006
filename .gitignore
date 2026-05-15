@@ -5,12 +5,36 @@ __pycache__/
 .venv/
 venv/
 *.pyc
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.sqlite
+*.sqlite3
 
 # Large local data files
 data/raw/*
+data/interim/*
 data/processed/*
+data/sample/*
 !data/raw/.gitkeep
+!data/interim/.gitkeep
 !data/processed/.gitkeep
+
+# Generated model and row-level outputs kept local only
+artifacts/*.joblib
+artifacts/*.pkl
+artifacts/error_cases.csv
+
+# Root-level coursework and local reference files are not part of the public release
+/Practical*
+/Template_submission*.ipynb
+/*.pdf
+/*.zip
+/Cluster-House-Prices-Raw.png
+/biplot_2d.png
+reports/simple_results.html
 
 # Keep private coursework notebook local only
 casa0006_individual_work.ipynb

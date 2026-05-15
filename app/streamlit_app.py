@@ -12,10 +12,10 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 MODEL_PATH = ROOT_DIR / "artifacts" / "model.joblib"
 METRICS_PATH = ROOT_DIR / "artifacts" / "metrics.json"
 METRICS_CV_PATH = ROOT_DIR / "artifacts" / "metrics_cv.json"
-SAMPLE_PATH = ROOT_DIR / "data" / "sample" / "merged_sample.csv"
 MODEL_COMPARE_PATH = ROOT_DIR / "artifacts" / "model_compare.csv"
 ERROR_CASES_PATH = ROOT_DIR / "artifacts" / "error_cases.csv"
 FEATURE_IMPORTANCE_PATH = ROOT_DIR / "artifacts" / "feature_importance.csv"
+PERMUTATION_IMPORTANCE_PATH = ROOT_DIR / "artifacts" / "permutation_importance.csv"
 DATA_QUALITY_REPORT_PATH = ROOT_DIR / "artifacts" / "data_quality_report.json"
 LEAKAGE_REPORT_PATH = ROOT_DIR / "artifacts" / "leakage_check_report.json"
 THRESHOLD_REPORT_PATH = ROOT_DIR / "artifacts" / "threshold_report.csv"
@@ -51,13 +51,6 @@ def load_metrics_cv():
 
 
 @st.cache_data
-def load_sample_data():
-    if not SAMPLE_PATH.exists():
-        return pd.DataFrame()
-    return pd.read_csv(SAMPLE_PATH)
-
-
-@st.cache_data
 def load_preview_data(dataset_used: str | None):
     if not dataset_used:
         return pd.DataFrame(), "N/A"
@@ -89,6 +82,13 @@ def load_error_cases():
 def load_feature_importance():
     if FEATURE_IMPORTANCE_PATH.exists():
         return pd.read_csv(FEATURE_IMPORTANCE_PATH)
+    return pd.DataFrame()
+
+
+@st.cache_data
+def load_permutation_importance():
+    if PERMUTATION_IMPORTANCE_PATH.exists():
+        return pd.read_csv(PERMUTATION_IMPORTANCE_PATH)
     return pd.DataFrame()
 
 
@@ -221,14 +221,14 @@ def _render_module_explainer(section_key: str, t):
             - Multiple models are compared under the same setting to support transparent selection.
             - Accuracy reflects overall correctness. Macro F1 reflects balanced performance across classes and protects minority outcomes.
             - Confusion matrix and feature influence plots are used to interpret error structure and decision pattern.
-            - Reported values are treated as sample level evidence with controlled claims.
+            - Reported values are treated as full master table evidence with controlled claims.
             """,
             """
             **模型表现解读**
             - 在相同条件下比较多个模型，再进行选择，避免单模型偏见。
             - Accuracy反映整体正确率。Macro F1反映类别均衡表现，对少数类更敏感。
             - 结合混淆矩阵和特征影响图，可定位误差结构并解释模型判别路径。
-            - 当前结果属于样本级证据，结论保持克制，不做外推夸大。
+            - 当前结果属于完整主表证据，结论保持克制，不做外推夸大。
             """,
         ),
         "reliability": t(
@@ -394,16 +394,16 @@ def main() -> None:
         return zh if lang == "中文" else en
 
     st.set_page_config(
-        page_title="London Road Severity Explorer",
+        page_title="DfT/STATS19 Road Severity Explorer",
         page_icon=":bar_chart:",
         layout="wide",
     )
     lang = st.sidebar.selectbox("Language / 语言", ["English", "中文"], index=0)
-    st.title(t("London Road Collision Severity Project", "伦敦交通事故严重度预测项目"))
+    st.title(t("DfT/STATS19 Road Collision Severity Project", "DfT/STATS19 交通事故严重度预测项目"))
     st.caption(
         t(
-            "From coursework to portfolio: data quality, model comparison, and deployment.",
-            "从课程作业走向作品集，重点展示数据治理、模型比较与在线部署。",
+            "Full master table research: data quality, model comparison, and deployment.",
+            "完整主表研究，重点展示数据治理、模型比较与在线部署。",
         )
     )
 
@@ -413,6 +413,7 @@ def main() -> None:
     model_compare_df = load_model_comparison()
     error_cases_df = load_error_cases()
     feature_importance_df = load_feature_importance()
+    permutation_importance_df = load_permutation_importance()
     data_quality_report = load_json_if_exists(DATA_QUALITY_REPORT_PATH)
     leakage_report = load_json_if_exists(LEAKAGE_REPORT_PATH)
     calibration_report = load_json_if_exists(CALIBRATION_REPORT_PATH)
@@ -482,8 +483,8 @@ def main() -> None:
         if metrics:
             st.info(
                 t(
-                    f"Performance note: **{metrics.get('performance_note', 'sample demo performance')}**",
-                    f"结果说明 **{metrics.get('performance_note', 'sample demo performance')}**",
+                    f"Performance note: **{metrics.get('performance_note', 'full master table performance')}**",
+                    f"结果说明 **{metrics.get('performance_note', 'full master table performance')}**",
                 )
             )
             st.subheader(t("Version & Evidence", "版本与证据"))
@@ -517,16 +518,16 @@ def main() -> None:
                 """
                 **Data sources**
                 - UK DfT road safety open data, validated 2020 to 2024 collisions vehicles casualties, Great Britain coverage.
-                - London weather data from Kaggle public dataset, daily meteorological variables for London.
+                - London weather data from Kaggle public dataset, used as external daily meteorological enrichment with limited join coverage.
                 - UK bank holidays from GOV.UK JSON API, England and Wales calendar events.
-                - Core analytical focus remains London, with temporal coverage 2020-01-01 to 2024-12-31 in current processed table.
+                - Core modeling table uses the complete processed STATS19 master table with temporal coverage 2020-01-01 to 2024-12-31.
                 """,
                 """
                 **数据来源**
                 - 英国 DfT 道路安全公开数据，使用 2020 至 2024 年已验证的碰撞、车辆、伤亡三表，空间范围为大不列颠。
-                - 伦敦天气数据来自 Kaggle 公开数据集，粒度为按日气象变量。
+                - 伦敦天气数据来自 Kaggle 公开数据集，作为外部按日气象补充使用，但当前合并覆盖有限。
                 - 英国法定节假日来自 GOV.UK JSON 接口，使用 England and Wales 事件日历。
-                - 当前主表分析重点保持伦敦方向，时间覆盖为 2020-01-01 至 2024-12-31。
+                - 核心建模表使用完整处理后的 STATS19 主表，时间覆盖为 2020-01-01 至 2024-12-31。
                 """,
             )
         )
@@ -595,6 +596,14 @@ def main() -> None:
         else:
             selected = metrics.get("selected_model", "N/A")
             st.write(t(f"Selected model **{selected}**", f"选中模型 **{selected}**"))
+            fatal_screening = metrics.get("fatal_screening_model", {})
+            if fatal_screening:
+                st.info(
+                    t(
+                        f"Fatal screening model: **{fatal_screening.get('model_name', 'N/A')}**, fatal recall {fatal_screening.get('fatal_recall', 0):.3f}.",
+                        f"Fatal 筛查模型：**{fatal_screening.get('model_name', 'N/A')}**，Fatal 召回率 {fatal_screening.get('fatal_recall', 0):.3f}。",
+                    )
+                )
             selected_metrics = metrics.get("selected_model_metrics", {})
             c1, c2 = st.columns(2)
             c1.metric(t("Accuracy", "准确率"), f"{selected_metrics.get('accuracy', 0):.3f}")
@@ -621,6 +630,9 @@ def main() -> None:
             if not feature_importance_df.empty:
                 st.markdown(t("Top feature influence table", "特征影响Top表"))
                 st.dataframe(feature_importance_df.head(10), use_container_width=True)
+            if not permutation_importance_df.empty:
+                st.markdown(t("Permutation importance", "置换重要性"))
+                st.dataframe(permutation_importance_df.head(12), use_container_width=True)
             if search_report:
                 st.markdown(t("Hyperparameter search summary", "超参数搜索摘要"))
                 st.json(search_report)
@@ -675,9 +687,17 @@ def main() -> None:
             if not threshold_df.empty:
                 st.markdown(t("Fatal threshold sensitivity", "Fatal阈值敏感性"))
                 st.dataframe(threshold_df, use_container_width=True)
+            safety_threshold = metrics.get("safety_threshold", {}) if metrics else {}
+            if safety_threshold:
+                st.markdown(t("Selected safety threshold", "选中安全阈值"))
+                st.json(safety_threshold)
             if calibration_report:
                 st.markdown(t("Calibration report", "校准报告"))
                 st.json(calibration_report)
+            spatial_holdout = metrics_cv.get("spatial_holdout", {}) if metrics_cv else {}
+            if spatial_holdout:
+                st.markdown(t("Spatial group holdout", "空间分组外推"))
+                st.json(spatial_holdout)
 
     with tabs[5]:
         st.subheader(t("Error Analysis", "误差分析"))
@@ -686,8 +706,8 @@ def main() -> None:
         if error_cases_df.empty:
             st.warning(
                 t(
-                    "No error rows in current sample split. Treat this as optimistic sample behavior, not final model quality.",
-                    "当前样本切分下没有误差样本。这通常表示样本规模较小，不能据此断言模型泛化能力。",
+                    "No error rows were written for the current split, or the error file is empty.",
+                    "当前切分未写入误判记录，或误判文件为空。",
                 )
             )
         else:
@@ -762,39 +782,20 @@ def main() -> None:
     with tabs[7]:
         st.subheader(t("Limitations", "局限"))
         _render_module_explainer("limits", t)
-        is_full_data = rows_total > 100000
         st.markdown(
             t(
-                (
-                    """
-                    - Current metrics are based on the latest integrated full-data run, while feature coverage still has structural gaps.
-                    - Temporal and spatial features are improving but remain limited for location-specific inference.
-                    - External enrichments such as OSM air-quality and IMD are partially prepared and not fully integrated yet.
-                    - Some large artifacts are kept local and excluded from GitHub due storage limits.
-                    """
-                    if is_full_data
-                    else """
-                    - The current metrics are based on a sample demo dataset.
-                    - Temporal and spatial features are still limited.
-                    - External enrichment data (OSM air-quality IMD) is not fully connected yet.
-                    - Some large local artifacts are excluded from GitHub due storage limits.
-                    """
-                ),
-                (
-                    """
-                    - 当前指标来自最新全量整合运行，但特征覆盖仍存在结构性缺口。
-                    - 时空特征较此前更完整，但对精细位置推断仍有局限。
-                    - OSM 空气质量 IMD 等外部补充数据已部分准备，尚未完全接入。
-                    - 部分大体量产物因仓库存储限制仅保留在本地环境。
-                    """
-                    if is_full_data
-                    else """
-                    - 当前指标来自样本演示数据。
-                    - 时空特征仍然有限。
-                    - 外部补充数据（OSM 空气质量 IMD）尚未完全打通。
-                    - 部分大体量产物因仓库存储限制仅保留在本地环境。
-                    """
-                ),
+                """
+                - Current metrics are based on the latest integrated full-master-table run, while feature coverage still has structural gaps.
+                - External weather enrichment currently has limited join coverage, so STATS19 native weather and road fields remain important evidence.
+                - OSM, air-quality, and IMD enrichments are placeholders and are not treated as formal model evidence yet.
+                - Some large artifacts are kept local and excluded from GitHub due storage limits.
+                """,
+                """
+                - 当前指标来自最新完整主表运行，但特征覆盖仍存在结构性缺口。
+                - 外部天气补充当前合并覆盖有限，因此 STATS19 原生天气与道路字段仍是重要证据。
+                - OSM、空气质量与 IMD 补充字段仍是占位列，暂不作为正式模型证据。
+                - 部分大体量产物因仓库存储限制仅保留在本地环境。
+                """,
             )
         )
         if leakage_report:

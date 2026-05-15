@@ -26,7 +26,7 @@ def main() -> None:
     pipeline = payload["pipeline"]
     feature_columns = payload["feature_columns"]
 
-    df = load_dataset(settings.paths.sample_data, settings.paths.sample_data_fallback)
+    df = load_dataset(settings.paths.master_data)
     prepared = prepare_dataset(
         df=df,
         feature_columns=feature_columns,
@@ -35,7 +35,8 @@ def main() -> None:
     )
 
     pred = pipeline.predict(prepared.X)
-    metrics = evaluate_predictions(prepared.y.values, pred)
+    proba = pipeline.predict_proba(prepared.X) if hasattr(pipeline, "predict_proba") else None
+    metrics = evaluate_predictions(prepared.y.values, pred, y_proba=proba)
     output = {
         "model_name": payload["model_name"],
         "metrics": metrics,

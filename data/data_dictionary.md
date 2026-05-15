@@ -10,6 +10,16 @@
 - `time` (if available)
 - `lsoa_of_accident_location` or location coordinates
 
+## STATS19 road and environment features
+- `road_type`
+- `speed_limit`
+- `junction_detail`
+- `junction_control`
+- `light_conditions`
+- `weather_conditions`
+- `road_surface_conditions`
+- `urban_or_rural_area`
+
 ## Core weather features
 - `cloud_cover`
 - `sunshine`
@@ -44,4 +54,3 @@
 - `no2`
 - `pm25`
 - `imd_decile`
-

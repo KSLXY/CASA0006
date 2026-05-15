@@ -1,6 +1,5 @@
 paths:
-  sample_data: data/processed/processed_master.parquet
-  sample_data_fallback: data/sample/merged_sample.csv
+  master_data: data/processed/processed_master.parquet
   model_artifact: artifacts/model.joblib
   metrics_artifact: artifacts/metrics.json
   evaluation_artifact: artifacts/evaluation.json
@@ -11,10 +10,12 @@ paths:
   search_artifact: artifacts/hyperparameter_search.json
   ablation_leakage_artifact: artifacts/ablation_leakage.csv
   missingness_by_time_artifact: artifacts/missingness_by_time.csv
+  report_figures_dir: reports/figures
 
 train:
   random_seed: 42
   test_size: 0.2
+  min_training_rows: 100000
   target_column: accident_severity
   label_mapping_version: stats19_2025_v1
   severity_code_map:
@@ -23,6 +24,9 @@ train:
     3: 2
   feature_set_mode: pre_event
   model_selection_metric: f1_macro
+  safety_max_false_positive_rate: 0.2
+  permutation_importance_rows: 20000
+  calibration_rows: 120000
   enable_hyperparameter_search: false
   feature_columns:
     - number_of_vehicles
@@ -43,6 +47,51 @@ train:
     - hour_peak
     - precipitation_peak_interaction
     - low_visibility_proxy
+    - road_type
+    - speed_limit
+    - junction_detail
+    - junction_control
+    - light_conditions
+    - weather_conditions
+    - road_surface_conditions
+    - urban_or_rural_area
+  numeric_feature_columns:
+    - number_of_vehicles
+    - hour
+    - day_of_week
+    - month
+    - is_weekend
+    - season
+    - cloud_cover
+    - sunshine
+    - global_radiation
+    - max_temp
+    - mean_temp
+    - min_temp
+    - precipitation
+    - pressure
+    - snow
+    - hour_peak
+    - precipitation_peak_interaction
+    - low_visibility_proxy
+  categorical_feature_columns:
+    - road_type
+    - speed_limit
+    - junction_detail
+    - junction_control
+    - light_conditions
+    - weather_conditions
+    - road_surface_conditions
+    - urban_or_rural_area
+  external_weather_feature_columns:
+    - cloud_cover
+    - sunshine
+    - global_radiation
+    - max_temp
+    - mean_temp
+    - min_temp
+    - precipitation
+    - pressure
   pre_event_feature_columns:
     - number_of_vehicles
     - hour
@@ -62,6 +111,14 @@ train:
     - hour_peak
     - precipitation_peak_interaction
     - low_visibility_proxy
+    - road_type
+    - speed_limit
+    - junction_detail
+    - junction_control
+    - light_conditions
+    - weather_conditions
+    - road_surface_conditions
+    - urban_or_rural_area
   post_event_feature_columns:
     - number_of_vehicles
     - number_of_casualties
@@ -82,9 +139,17 @@ train:
     - hour_peak
     - precipitation_peak_interaction
     - low_visibility_proxy
+    - road_type
+    - speed_limit
+    - junction_detail
+    - junction_control
+    - light_conditions
+    - weather_conditions
+    - road_surface_conditions
+    - urban_or_rural_area
 
 app:
-  project_name: London Road Collision Severity Project
+  project_name: DfT/STATS19 Road Collision Severity Project
   class_labels:
     - Fatal
     - Serious

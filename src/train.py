@@ -9,6 +9,9 @@ import joblib
 import matplotlib
 import numpy as np
 import pandas as pd
+from sklearn.base import clone
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.inspection import permutation_importance
 from sklearn.metrics import (
     average_precision_score,
     balanced_accuracy_score,
@@ -16,13 +19,11 @@ from sklearn.metrics import (
     precision_recall_fscore_support,
     recall_score,
 )
-from sklearn.model_selection import StratifiedKFold, train_test_split
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GroupShuffleSplit, StratifiedKFold, train_test_split
 
 from src.config import load_settings
 from src.data_pipeline import build_missingness_by_time, load_dataset, prepare_dataset
-from src.modeling import build_models, evaluate_predictions, fit_and_select_model
+from src.modeling import build_models, evaluate_predictions, fit_and_select_model, get_transformed_feature_names, make_pipeline
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -59,6 +60,16 @@ def _get_feature_columns(settings) -> list[str]:
     return settings.train.feature_columns
 
 
+def _get_active_feature_types(settings, feature_columns: list[str]) -> tuple[list[str], list[str]]:
+    selected = set(feature_columns)
+    numeric = [c for c in settings.train.numeric_feature_columns if c in selected]
+    categorical = [c for c in settings.train.categorical_feature_columns if c in selected]
+    covered = set(numeric) | set(categorical)
+    remaining = [c for c in feature_columns if c not in covered]
+    numeric.extend(remaining)
+    return numeric, categorical
+
+
 def _enforce_pre_event_policy(mode: str, feature_columns: list[str]) -> None:
     if mode != "pre_event":
         return
@@ -66,6 +77,15 @@ def _enforce_pre_event_policy(mode: str, feature_columns: list[str]) -> None:
     present = sorted([f for f in feature_columns if f in forbidden])
     if present:
         raise RuntimeError(f"pre_event mode cannot include post-event features: {present}")
+
+
+def _validate_master_dataset_size(row_count: int, min_training_rows: int) -> None:
+    if row_count < min_training_rows:
+        raise RuntimeError(
+            "Master dataset was not loaded correctly: "
+            f"found {row_count} rows, expected at least {min_training_rows}. "
+            "Check configs/default.yaml paths.master_data."
+        )
 
 
 def _build_model_comparison(all_metrics: list[dict[str, Any]]) -> pd.DataFrame:
@@ -76,6 +96,9 @@ def _build_model_comparison(all_metrics: list[dict[str, Any]]) -> pd.DataFrame:
                 "accuracy": float(m["accuracy"]),
                 "f1_macro": float(m["f1_macro"]),
                 "balanced_accuracy": float(m.get("balanced_accuracy", 0.0)),
+                "fatal_precision": float(m.get("fatal_precision", 0.0)),
+                "fatal_recall": float(m.get("fatal_recall", 0.0)),
+                "fatal_pr_auc": float(m.get("fatal_pr_auc", 0.0)),
             }
             for m in all_metrics
         ]
@@ -123,6 +146,7 @@ def _save_confusion_matrix_figure(confusion_matrix: list[list[int]], labels: lis
 
 def _save_feature_importance_figure(pipeline, feature_columns: list[str], output_path: Path) -> pd.DataFrame:
     model = pipeline.named_steps["model"]
+    transformed_features = get_transformed_feature_names(pipeline, fallback_features=feature_columns)
     importance = None
     method = None
     if hasattr(model, "feature_importances_"):
@@ -134,9 +158,10 @@ def _save_feature_importance_figure(pipeline, feature_columns: list[str], output
         method = "avg_abs_coef"
 
     if importance is None:
-        df = pd.DataFrame({"feature": feature_columns, "importance": np.zeros(len(feature_columns))})
+        df = pd.DataFrame({"feature": transformed_features, "importance": np.zeros(len(transformed_features))})
     else:
-        df = pd.DataFrame({"feature": feature_columns, "importance": importance})
+        names = transformed_features if len(transformed_features) == len(importance) else [f"feature_{i}" for i in range(len(importance))]
+        df = pd.DataFrame({"feature": names, "importance": importance})
     df = df.sort_values("importance", ascending=False).reset_index(drop=True)
     top = df.head(10)
 
@@ -157,7 +182,15 @@ def _fatal_recall(y_true: np.ndarray, y_pred: np.ndarray, fatal_class_index: int
     return float(recall_score(true_bin, pred_bin, zero_division=0))
 
 
-def _run_cv_reliability(X: pd.DataFrame, y: pd.Series, random_seed: int, class_labels: list[str], fatal_idx: int) -> dict[str, Any]:
+def _run_cv_reliability(
+    X: pd.DataFrame,
+    y: pd.Series,
+    random_seed: int,
+    class_labels: list[str],
+    fatal_idx: int,
+    numeric_features: list[str],
+    categorical_features: list[str],
+) -> dict[str, Any]:
     max_rows = 120000
     if len(X) > max_rows:
         X, _, y, _ = train_test_split(X, y, train_size=max_rows, random_state=random_seed, stratify=y)
@@ -172,13 +205,14 @@ def _run_cv_reliability(X: pd.DataFrame, y: pd.Series, random_seed: int, class_l
         for train_idx, test_idx in cv.split(X, y):
             X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
             y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
-            pipeline = Pipeline(steps=[("scaler", StandardScaler()), ("model", model)])
+            pipeline = make_pipeline(model, numeric_features=numeric_features, categorical_features=categorical_features)
             pipeline.fit(X_train, y_train)
             y_pred = pipeline.predict(X_test)
-            metrics = evaluate_predictions(y_test.values, y_pred)
+            y_proba = pipeline.predict_proba(X_test)
+            metrics = evaluate_predictions(y_test.values, y_pred, y_proba=y_proba, fatal_idx=fatal_idx)
             fold_scores["accuracy"].append(float(metrics["accuracy"]))
             fold_scores["f1_macro"].append(float(metrics["f1_macro"]))
-            fold_scores["fatal_recall"].append(_fatal_recall(y_test.values, y_pred, fatal_class_index=fatal_idx))
+            fold_scores["fatal_recall"].append(float(metrics["fatal_recall"]))
         rows.append(
             {
                 "model_name": model_name,
@@ -200,14 +234,9 @@ def _run_time_holdout_reliability(
     X: pd.DataFrame,
     y: pd.Series,
     dates: pd.Series,
-    selected_model_name: str,
-    selected_best_params: dict[str, Any],
-    random_seed: int,
+    selected_pipeline,
     fatal_idx: int,
 ) -> dict[str, Any]:
-    models = build_models(random_seed=random_seed)
-    if selected_model_name not in models:
-        return {"available": False, "reason": f"Selected model {selected_model_name} not found."}
     valid_date_mask = dates.notna()
     if valid_date_mask.sum() < max(10, int(0.4 * len(dates))):
         return {"available": False, "reason": "Not enough valid date values for time-based holdout."}
@@ -222,17 +251,13 @@ def _run_time_holdout_reliability(
     if split_idx <= 0 or split_idx >= len(Xd):
         return {"available": False, "reason": "Invalid split index for time holdout."}
 
-    base_model = models[selected_model_name]
-    model_params = {k.replace("model__", ""): v for k, v in selected_best_params.items() if k.startswith("model__")}
-    if model_params:
-        base_model.set_params(**model_params)
-
     X_train, X_test = Xd.iloc[:split_idx], Xd.iloc[split_idx:]
     y_train, y_test = yd.iloc[:split_idx], yd.iloc[split_idx:]
-    pipeline = Pipeline(steps=[("scaler", StandardScaler()), ("model", base_model)])
+    pipeline = clone(selected_pipeline)
     pipeline.fit(X_train, y_train)
     y_pred = pipeline.predict(X_test)
-    metrics = evaluate_predictions(y_test.values, y_pred)
+    y_proba = pipeline.predict_proba(X_test)
+    metrics = evaluate_predictions(y_test.values, y_pred, y_proba=y_proba, fatal_idx=fatal_idx)
     return {
         "available": True,
         "split_date_start": str(dd.iloc[split_idx].date()),
@@ -241,7 +266,47 @@ def _run_time_holdout_reliability(
         "metrics": {
             "accuracy": float(metrics["accuracy"]),
             "f1_macro": float(metrics["f1_macro"]),
-            "fatal_recall": _fatal_recall(y_test.values, y_pred, fatal_class_index=fatal_idx),
+            "fatal_precision": float(metrics["fatal_precision"]),
+            "fatal_recall": float(metrics["fatal_recall"]),
+            "fatal_pr_auc": float(metrics["fatal_pr_auc"]),
+        },
+    }
+
+
+def _run_spatial_holdout_reliability(
+    X: pd.DataFrame,
+    y: pd.Series,
+    spatial_keys: pd.Series,
+    selected_pipeline,
+    test_size: float,
+    random_seed: int,
+    fatal_idx: int,
+) -> dict[str, Any]:
+    groups = spatial_keys.fillna("unknown").astype(str)
+    if groups.nunique(dropna=True) < 5:
+        return {"available": False, "reason": "Not enough spatial groups for group holdout."}
+    splitter = GroupShuffleSplit(n_splits=1, test_size=test_size, random_state=random_seed)
+    train_idx, test_idx = next(splitter.split(X, y, groups=groups))
+    X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
+    y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
+    pipeline = clone(selected_pipeline)
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
+    y_proba = pipeline.predict_proba(X_test)
+    metrics = evaluate_predictions(y_test.values, y_pred, y_proba=y_proba, fatal_idx=fatal_idx)
+    return {
+        "available": True,
+        "train_rows": int(len(X_train)),
+        "test_rows": int(len(X_test)),
+        "train_groups": int(groups.iloc[train_idx].nunique()),
+        "test_groups": int(groups.iloc[test_idx].nunique()),
+        "metrics": {
+            "accuracy": float(metrics["accuracy"]),
+            "f1_macro": float(metrics["f1_macro"]),
+            "balanced_accuracy": float(metrics["balanced_accuracy"]),
+            "fatal_precision": float(metrics["fatal_precision"]),
+            "fatal_recall": float(metrics["fatal_recall"]),
+            "fatal_pr_auc": float(metrics["fatal_pr_auc"]),
         },
     }
 
@@ -319,12 +384,15 @@ def _build_threshold_report(y_true: np.ndarray, fatal_prob: np.ndarray, fatal_id
         fp = int(((true_bin == 0) & (pred_bin == 1)).sum())
         fn = int(((true_bin == 1) & (pred_bin == 0)).sum())
         tn = int(((true_bin == 0) & (pred_bin == 0)).sum())
+        fpr = fp / max(1, fp + tn)
         rows.append(
             {
                 "threshold": float(round(threshold, 2)),
                 "precision": float(precision),
                 "recall": float(recall),
                 "f1": float(f1),
+                "false_positive_rate": float(fpr),
+                "predicted_positive_rate": float(pred_bin.mean()),
                 "tp": tp,
                 "fp": fp,
                 "fn": fn,
@@ -332,6 +400,16 @@ def _build_threshold_report(y_true: np.ndarray, fatal_prob: np.ndarray, fatal_id
             }
         )
     return pd.DataFrame(rows)
+
+
+def _select_safety_threshold(threshold_df: pd.DataFrame, max_false_positive_rate: float) -> dict[str, Any]:
+    eligible = threshold_df[threshold_df["false_positive_rate"] <= max_false_positive_rate].copy()
+    if eligible.empty:
+        eligible = threshold_df.copy()
+    eligible = eligible.sort_values(["recall", "precision", "threshold"], ascending=[False, False, True])
+    row = eligible.iloc[0].to_dict()
+    row["selection_rule"] = f"max recall with false_positive_rate <= {max_false_positive_rate}"
+    return {str(k): _to_jsonable(v) for k, v in row.items()}
 
 
 def _build_calibration_report(y_true: np.ndarray, fatal_prob: np.ndarray, fatal_idx: int) -> dict[str, Any]:
@@ -367,9 +445,108 @@ def _build_calibration_report(y_true: np.ndarray, fatal_prob: np.ndarray, fatal_
     }
 
 
+def _build_feature_defaults(X: pd.DataFrame, numeric_features: list[str], categorical_features: list[str]) -> dict[str, Any]:
+    defaults: dict[str, Any] = {}
+    for col in numeric_features:
+        if col in X.columns:
+            numeric = pd.to_numeric(X[col], errors="coerce")
+            defaults[col] = float(numeric.median()) if numeric.notna().any() else 0.0
+    for col in categorical_features:
+        if col in X.columns:
+            modes = X[col].dropna().astype(str).mode()
+            defaults[col] = str(modes.iloc[0]) if not modes.empty else "missing"
+    return defaults
+
+
+def _select_fatal_screening_model(all_metrics: list[dict[str, Any]]) -> dict[str, Any]:
+    if not all_metrics:
+        return {}
+    ordered = sorted(
+        all_metrics,
+        key=lambda m: (float(m.get("fatal_recall", 0.0)), float(m.get("fatal_pr_auc", 0.0)), float(m.get("f1_macro", 0.0))),
+        reverse=True,
+    )
+    chosen = ordered[0]
+    return {
+        "model_name": chosen["model_name"],
+        "selection_rule": "highest fatal_recall, then fatal_pr_auc, then macro_f1",
+        "fatal_recall": float(chosen.get("fatal_recall", 0.0)),
+        "fatal_precision": float(chosen.get("fatal_precision", 0.0)),
+        "fatal_pr_auc": float(chosen.get("fatal_pr_auc", 0.0)),
+        "f1_macro": float(chosen.get("f1_macro", 0.0)),
+    }
+
+
+def _fit_calibrated_model(best_pipeline, X_train: pd.DataFrame, y_train: pd.Series, random_seed: int, max_rows: int):
+    X_work = X_train
+    y_work = y_train
+    if len(X_work) > max_rows:
+        X_work, _, y_work, _ = train_test_split(X_work, y_work, train_size=max_rows, random_state=random_seed, stratify=y_work)
+    min_count = int(y_work.value_counts().min())
+    if min_count < 2 or len(X_work) < 20:
+        return None, {"available": False, "reason": "Not enough rows per class for calibration."}
+    X_fit, X_cal, y_fit, y_cal = train_test_split(
+        X_work,
+        y_work,
+        test_size=0.25,
+        random_state=random_seed,
+        stratify=y_work,
+    )
+    fitted = clone(best_pipeline)
+    fitted.fit(X_fit, y_fit)
+    try:
+        calibrated = CalibratedClassifierCV(estimator=fitted, method="sigmoid", cv="prefit")
+        calibrated.fit(X_cal, y_cal)
+    except Exception as exc:  # noqa: BLE001
+        return None, {"available": False, "reason": f"Calibration failed: {exc}"}
+    return calibrated, {
+        "available": True,
+        "method": "sigmoid",
+        "fit_rows": int(len(X_fit)),
+        "calibration_rows": int(len(X_cal)),
+    }
+
+
+def _build_permutation_importance(
+    pipeline,
+    X_test: pd.DataFrame,
+    y_test: pd.Series,
+    feature_columns: list[str],
+    random_seed: int,
+    max_rows: int,
+) -> pd.DataFrame:
+    X_perm = X_test
+    y_perm = y_test
+    if len(X_perm) > max_rows:
+        X_perm, _, y_perm, _ = train_test_split(X_perm, y_perm, train_size=max_rows, random_state=random_seed, stratify=y_perm)
+    result = permutation_importance(
+        pipeline,
+        X_perm,
+        y_perm,
+        scoring="f1_macro",
+        n_repeats=3,
+        random_state=random_seed,
+        n_jobs=1,
+    )
+    return (
+        pd.DataFrame(
+            {
+                "feature": feature_columns,
+                "importance_mean": result.importances_mean,
+                "importance_std": result.importances_std,
+                "method": "permutation_f1_macro",
+                "rows": int(len(X_perm)),
+            }
+        )
+        .sort_values("importance_mean", ascending=False)
+        .reset_index(drop=True)
+    )
+
+
 def _build_ablation_leakage(raw_df: pd.DataFrame, settings) -> pd.DataFrame:
     outputs: list[dict[str, Any]] = []
     for mode_name, cols in [("pre_event", settings.train.pre_event_feature_columns), ("post_event", settings.train.post_event_feature_columns)]:
+        numeric_features, categorical_features = _get_active_feature_types(settings, cols)
         prepared = prepare_dataset(
             raw_df,
             feature_columns=cols,
@@ -392,8 +569,11 @@ def _build_ablation_leakage(raw_df: pd.DataFrame, settings) -> pd.DataFrame:
             X_test=X_test,
             y_test=y_test,
             random_seed=settings.train.random_seed,
+            numeric_features=numeric_features,
+            categorical_features=categorical_features,
             metric_key=settings.train.model_selection_metric,
             enable_hyperparameter_search=False,
+            fatal_idx=0,
         )
         y_pred = best.pipeline.predict(X_test)
         outputs.append(
@@ -414,12 +594,12 @@ def main() -> None:
     args = parse_args()
     settings = load_settings(args.config)
 
-    dataset_used = settings.paths.sample_data
-    if not dataset_used.exists() and settings.paths.sample_data_fallback is not None and settings.paths.sample_data_fallback.exists():
-        dataset_used = settings.paths.sample_data_fallback
-    raw_df = load_dataset(settings.paths.sample_data, settings.paths.sample_data_fallback)
+    dataset_used = settings.paths.master_data
+    raw_df = load_dataset(settings.paths.master_data)
+    _validate_master_dataset_size(len(raw_df), settings.train.min_training_rows)
 
     feature_columns = _get_feature_columns(settings)
+    numeric_features, categorical_features = _get_active_feature_types(settings, feature_columns)
     _enforce_pre_event_policy(settings.train.feature_set_mode, feature_columns)
     prepared = prepare_dataset(
         raw_df,
@@ -447,16 +627,35 @@ def main() -> None:
         X_test=X_test,
         y_test=y_test,
         random_seed=settings.train.random_seed,
+        numeric_features=numeric_features,
+        categorical_features=categorical_features,
         metric_key=settings.train.model_selection_metric,
         enable_hyperparameter_search=settings.train.enable_hyperparameter_search,
+        fatal_idx=fatal_idx,
     )
     best_pred = best.pipeline.predict(X_test)
+    fatal_screening_model = _select_fatal_screening_model(all_metrics)
+    calibrated_model, calibration_model_report = _fit_calibrated_model(
+        best.pipeline,
+        X_train,
+        y_train,
+        random_seed=settings.train.random_seed,
+        max_rows=settings.train.calibration_rows,
+    )
 
     model_payload: dict[str, Any] = {
         "model_name": best.name,
         "pipeline": best.pipeline,
+        "balanced_research_model": {
+            "model_name": best.name,
+            "selection_metric": settings.train.model_selection_metric,
+        },
+        "fatal_screening_model": fatal_screening_model,
+        "calibration_model_report": calibration_model_report,
         "feature_columns": feature_columns,
-        "feature_defaults": prepared.X.median(numeric_only=True).to_dict(),
+        "numeric_feature_columns": numeric_features,
+        "categorical_feature_columns": categorical_features,
+        "feature_defaults": _build_feature_defaults(prepared.X, numeric_features, categorical_features),
         "class_labels": settings.app.class_labels,
         "target_column": settings.train.target_column,
         "severity_code_map": settings.train.severity_code_map,
@@ -477,10 +676,10 @@ def main() -> None:
     ]:
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    joblib.dump(model_payload, settings.paths.model_artifact)
+    joblib.dump(model_payload, settings.paths.model_artifact, compress=3)
 
     artifacts_dir = settings.paths.model_artifact.parent
-    reports_dir = Path("reports/figures").resolve()
+    reports_dir = settings.paths.report_figures_dir
     model_compare_path = artifacts_dir / "model_compare.csv"
     error_cases_path = artifacts_dir / "error_cases.csv"
     metrics_cv_path = artifacts_dir / "metrics_cv.json"
@@ -493,6 +692,14 @@ def main() -> None:
     _save_model_comparison_figure(model_compare_df, model_comparison_fig_path)
     _save_confusion_matrix_figure(best.metrics["confusion_matrix"], settings.app.class_labels, confusion_matrix_fig_path)
     feature_importance_df = _save_feature_importance_figure(best.pipeline, feature_columns, feature_importance_fig_path)
+    permutation_importance_df = _build_permutation_importance(
+        best.pipeline,
+        X_test,
+        y_test,
+        feature_columns=feature_columns,
+        random_seed=settings.train.random_seed,
+        max_rows=settings.train.permutation_importance_rows,
+    )
 
     y_test_arr = np.asarray(y_test)
     y_pred_arr = np.asarray(best_pred)
@@ -509,25 +716,50 @@ def main() -> None:
     fatal_prob = np.asarray(proba[:, fatal_idx], dtype=float)
     threshold_df = _build_threshold_report(y_test_arr, fatal_prob, fatal_idx=fatal_idx)
     threshold_df.to_csv(settings.paths.threshold_artifact, index=False)
+    safety_threshold = _select_safety_threshold(threshold_df, max_false_positive_rate=settings.train.safety_max_false_positive_rate)
     calibration_report = _build_calibration_report(y_test_arr, fatal_prob, fatal_idx=fatal_idx)
+    if calibrated_model is not None:
+        calibrated_prob = np.asarray(calibrated_model.predict_proba(X_test)[:, fatal_idx], dtype=float)
+        calibration_report["calibrated_model"] = calibration_model_report
+        calibration_report["calibrated_fatal_probability"] = _build_calibration_report(y_test_arr, calibrated_prob, fatal_idx=fatal_idx)
+    else:
+        calibration_report["calibrated_model"] = calibration_model_report
     settings.paths.calibration_artifact.write_text(json.dumps(_to_jsonable(calibration_report), ensure_ascii=False, indent=2), encoding="utf-8")
 
-    cv_results = _run_cv_reliability(prepared.X, prepared.y, random_seed=settings.train.random_seed, class_labels=settings.app.class_labels, fatal_idx=fatal_idx)
+    cv_results = _run_cv_reliability(
+        prepared.X,
+        prepared.y,
+        random_seed=settings.train.random_seed,
+        class_labels=settings.app.class_labels,
+        fatal_idx=fatal_idx,
+        numeric_features=numeric_features,
+        categorical_features=categorical_features,
+    )
     time_holdout = _run_time_holdout_reliability(
         X=prepared.X,
         y=prepared.y,
         dates=prepared.dates,
-        selected_model_name=best.name,
-        selected_best_params=best.metrics.get("best_params", {}),
+        selected_pipeline=best.pipeline,
+        fatal_idx=fatal_idx,
+    )
+    spatial_holdout = _run_spatial_holdout_reliability(
+        X=prepared.X,
+        y=prepared.y,
+        spatial_keys=prepared.spatial_keys,
+        selected_pipeline=best.pipeline,
+        test_size=settings.train.test_size,
         random_seed=settings.train.random_seed,
         fatal_idx=fatal_idx,
     )
-    metrics_cv_path.write_text(json.dumps(_to_jsonable({"cv": cv_results, "time_holdout": time_holdout}), ensure_ascii=False, indent=2), encoding="utf-8")
+    metrics_cv_path.write_text(
+        json.dumps(_to_jsonable({"cv": cv_results, "time_holdout": time_holdout, "spatial_holdout": spatial_holdout}), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
 
     if error_df.empty:
         observations = [
-            "No error cases on this split, likely due to limited sample coverage.",
-            "Current metrics should be treated as baseline evidence rather than final performance.",
+            "No error cases were written for the current split.",
+            "Current metrics should be treated as full-master-table baseline evidence rather than final performance.",
             "Larger data and stricter time-based evaluation are required before strong claims.",
         ]
     else:
@@ -569,6 +801,12 @@ def main() -> None:
 
     metrics_payload = {
         "selected_model": best.name,
+        "balanced_research_model": {
+            "model_name": best.name,
+            "selection_metric": settings.train.model_selection_metric,
+            "metrics": best.metrics,
+        },
+        "fatal_screening_model": fatal_screening_model,
         "selected_model_metrics": best.metrics,
         "all_model_metrics": all_metrics,
         "rows_total": int(len(raw_df)),
@@ -576,10 +814,13 @@ def main() -> None:
         "rows_removed_invalid_target": prepared.removed_invalid_target,
         "missing_rate_by_feature": prepared.missing_rate_by_feature,
         "feature_columns": feature_columns,
+        "numeric_feature_columns": numeric_features,
+        "categorical_feature_columns": categorical_features,
+        "external_weather_feature_columns": settings.train.external_weather_feature_columns,
         "feature_set_mode": settings.train.feature_set_mode,
         "label_mapping_version": settings.train.label_mapping_version,
         "data_version_tag": f"{Path(dataset_used).name}_{len(raw_df)}rows",
-        "performance_note": "baseline performance on current processed dataset",
+        "performance_note": "baseline performance on the full processed master table",
         "dataset_used": str(dataset_used),
         "model_compare_csv": str(model_compare_path),
         "metrics_cv_json": str(metrics_cv_path),
@@ -587,6 +828,7 @@ def main() -> None:
         "data_quality_report_json": str(settings.paths.data_quality_artifact),
         "leakage_check_report_json": str(settings.paths.leakage_check_artifact),
         "threshold_report_csv": str(settings.paths.threshold_artifact),
+        "safety_threshold": safety_threshold,
         "calibration_report_json": str(settings.paths.calibration_artifact),
         "hyperparameter_search_json": str(settings.paths.search_artifact),
         "ablation_leakage_csv": str(settings.paths.ablation_leakage_artifact),
@@ -611,6 +853,8 @@ def main() -> None:
         "probability_metrics_on_test_split": {
             "fatal_brier": float(calibration_report.get("brier_score", 0.0)),
             "fatal_ece": float(calibration_report.get("expected_calibration_error", 0.0)),
+            "calibrated_fatal_brier": float(calibration_report.get("calibrated_fatal_probability", {}).get("brier_score", 0.0)),
+            "calibrated_fatal_ece": float(calibration_report.get("calibrated_fatal_probability", {}).get("expected_calibration_error", 0.0)),
         },
         "class_distribution": {str(int(k) + 1): int(v) for k, v in class_distribution.items()},
         "fatal_metrics_on_test_split": {
@@ -626,6 +870,7 @@ def main() -> None:
     settings.paths.metrics_artifact.write_text(json.dumps(_to_jsonable(metrics_payload), ensure_ascii=False, indent=2), encoding="utf-8")
 
     feature_importance_df.to_csv(artifacts_dir / "feature_importance.csv", index=False)
+    permutation_importance_df.to_csv(artifacts_dir / "permutation_importance.csv", index=False)
     print(f"Model saved to: {settings.paths.model_artifact}")
     print(f"Metrics saved to: {settings.paths.metrics_artifact}")
     print(f"Selected model: {best.name}")

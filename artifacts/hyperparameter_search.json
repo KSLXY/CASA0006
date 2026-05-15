@@ -5,7 +5,7 @@
     "search_enabled": false,
     "best_params": {},
     "best_score_f1_macro": NaN,
-    "fit_rows_for_search": 28,
+    "fit_rows_for_search": 402780,
     "top_trials": []
   },
   {
@@ -14,16 +14,16 @@
     "search_enabled": false,
     "best_params": {},
     "best_score_f1_macro": NaN,
-    "fit_rows_for_search": 28,
+    "fit_rows_for_search": 402780,
     "top_trials": []
   },
   {
-    "model_name": "hist_gradient_boosting",
+    "model_name": "hist_gradient_boosting_balanced",
     "cv_splits": 5,
     "search_enabled": false,
     "best_params": {},
     "best_score_f1_macro": NaN,
-    "fit_rows_for_search": 28,
+    "fit_rows_for_search": 402780,
     "top_trials": []
   }
 ]

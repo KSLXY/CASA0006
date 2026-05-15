@@ -1,59 +1,63 @@
 {
-  "model_name": "logistic_regression",
+  "model_name": "random_forest",
   "metrics": {
-    "accuracy": 0.9428571428571428,
-    "balanced_accuracy": 0.9555555555555556,
-    "f1_macro": 0.953968253968254,
+    "accuracy": 0.7890282536372213,
+    "balanced_accuracy": 0.7620884752324685,
+    "f1_macro": 0.6217686014639141,
+    "fatal_precision": 0.2605639913232104,
+    "fatal_recall": 0.801762114537445,
+    "fatal_f1": 0.3933073573229429,
+    "fatal_pr_auc": 0.46380739615565103,
     "classification_report": {
       "0": {
-        "precision": 0.875,
-        "recall": 1.0,
-        "f1-score": 0.9333333333333333,
-        "support": 14.0
+        "precision": 0.2605639913232104,
+        "recall": 0.801762114537445,
+        "f1-score": 0.3933073573229429,
+        "support": 7491.0
       },
       "1": {
-        "precision": 1.0,
-        "recall": 0.8666666666666667,
-        "f1-score": 0.9285714285714286,
-        "support": 15.0
+        "precision": 0.5652065335299947,
+        "recall": 0.6585467870554752,
+        "f1-score": 0.6083169547615448,
+        "support": 109977.0
       },
       "2": {
-        "precision": 1.0,
-        "recall": 1.0,
-        "f1-score": 1.0,
-        "support": 6.0
+        "precision": 0.9050175141788206,
+        "recall": 0.8259565241044852,
+        "f1-score": 0.8636814923072547,
+        "support": 386007.0
       },
-      "accuracy": 0.9428571428571428,
+      "accuracy": 0.7890282536372213,
       "macro avg": {
-        "precision": 0.9583333333333334,
-        "recall": 0.9555555555555556,
-        "f1-score": 0.953968253968254,
-        "support": 35.0
+        "precision": 0.5769293463440085,
+        "recall": 0.7620884752324685,
+        "f1-score": 0.6217686014639141,
+        "support": 503475.0
       },
       "weighted avg": {
-        "precision": 0.95,
-        "recall": 0.9428571428571428,
-        "f1-score": 0.942721088435374,
-        "support": 35.0
+        "precision": 0.821202044575509,
+        "recall": 0.7890282536372213,
+        "f1-score": 0.8009022115270134,
+        "support": 503475.0
       }
     },
     "confusion_matrix": [
       [
-        14,
-        0,
-        0
+        6006,
+        600,
+        885
       ],
       [
-        2,
-        13,
-        0
+        4976,
+        72425,
+        32576
       ],
       [
-        0,
-        0,
-        6
+        12068,
+        55114,
+        318825
       ]
     ]
   },
-  "rows_evaluated": 35
+  "rows_evaluated": 503475
 }
